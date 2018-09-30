@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>    
+<beans xmlns="http://www.springframework.org/schema/beans" 
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"   
+       xmlns:context="http://www.springframework.org/schema/context"  
+       xsi:schemaLocation="http://www.springframework.org/schema/beans 
+       http://www.springframework.org/schema/beans/spring-beans.xsd  
+       http://www.springframework.org/schema/context 
+       http://www.springframework.org/schema/context/spring-context.xsd">  
+     
+  
+   <!-- 服务配置 -->
+  <bean id="mqttserver" class="com.teamsun.mqtt.MqttServer" lazy-init="false">
+     <property name="port" value="10000"/>
+     <property name="sobacklog" value="1024"/>
+     <property name="bossthreads" value="4"/>
+     <property name="workthreads" value="4"/>
+     <property name="dbthreads" value="8"/>
+     <property name="readtimeout" value="120"/>
+   </bean>
+   
+  
+
+   <!-- 处理连接 -->
+   <bean id="connhandle" class="io.mqttpush.mqttserver.handle.ConnectionService" lazy-init="false">
+    <property name="str2channel" ref="str2channel"/>
+    <property name="channel2str" ref="channel2str"/>
+   </bean>
+   <!-- 处理订阅 -->
+   <bean id="subhandle" class="io.mqttpush.mqttserver.handle.SubServiceHandle" lazy-init="false">
+   <constructor-arg name="executorService" value="#{mqttserver.getDboptGroup()}"/>
+    <property name="channel2str" ref="channel2str"/>
+    <property name="submap" value="#{mqttserver.getSubmap()}"></property>
+   </bean>
+   
+   <!-- 处理发布 -->
+   <bean id="pushhandle" class="io.mqttpush.mqttserver.handle.PushServiceHandle" lazy-init="false">
+   
+    <constructor-arg name="executorService" value="#{mqttserver.getDboptGroup()}"/>
+    <property name="str2channel" ref="str2channel"/>
+    <property name="channel2str" ref="channel2str"/>
+    <property name="msgRepsque" ref="msgRepsque"></property>
+    <property name="msgSendedQue" ref="msgSendedQue"></property>
+   </bean>
+   
+</beans> 
