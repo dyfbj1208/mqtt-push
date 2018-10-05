@@ -5,5 +5,5 @@
     <artifactId>mqtt-push</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
-  <artifactId>websocket-getway</artifactId>
+  <artifactId>mqtt-getway</artifactId>
 </project>

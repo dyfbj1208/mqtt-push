@@ -1,7 +1,7 @@
 package io.mqttpush.mqttserver.service;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
@@ -17,7 +17,7 @@ public class CheckUserService {
 
 	Logger logger = Logger.getLogger(getClass());
 
-	static Map<String, String> userpwds = new HashMap<String, String>();
+	Map<String, String> userpwds = new ConcurrentHashMap<String, String>();
 
 	boolean init;
 
@@ -43,7 +43,7 @@ public class CheckUserService {
 	 * @param validate
 	 * @return
 	 */
-	public MqttConnectReturnCode validateUserLogin(String username,String password) {
+	public MqttConnectReturnCode checkUserReturnCode(String username,String password) {
 
 		MqttConnectReturnCode returnCode = MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
 

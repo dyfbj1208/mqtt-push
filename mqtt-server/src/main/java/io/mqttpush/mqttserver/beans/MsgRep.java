@@ -1,4 +1,4 @@
-package io.mqttpush.mqttserver.entity;
+package io.mqttpush.mqttserver.beans;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -92,7 +92,6 @@ public class MsgRep implements  Serializable{
 		if(content==null){
 			byte[] bs=new byte[byteBuf.readableBytes()];
 			byteBuf.readBytes(bs);
-			 ReferenceCountUtil.release(byteBuf);
 			return bs;
 		}
 		return content;

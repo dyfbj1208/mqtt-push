@@ -15,20 +15,23 @@
 
 	<dependencies>
 
-	
-
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-context</artifactId>
-			<version>${spring-version}</version>
-		</dependency>
-
-
-
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-codec</artifactId>
-			<version>4.1.6.Final</version>
+			<version>${netty-version}</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/io.netty/netty-codec-redis -->
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-codec-redis</artifactId>
+			<version>${netty-version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>io.mqttpush</groupId>
+			<artifactId>mqtt-commons</artifactId>
+			<version>${version}</version>
 		</dependency>
 
 	</dependencies>

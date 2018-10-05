@@ -2,9 +2,6 @@ package io.mqttpush.mqttserver.middle;
 
 import java.net.InetSocketAddress;
 
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
-
 import io.mqttpush.mqttserver.handle.MyChannelInitializer;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -49,17 +46,15 @@ public class MqttTcpServer {
 			bootstrap.channel(NioServerSocketChannel.class);//
 		}
 
-		ApplicationContext applicationContext = new ClassPathXmlApplicationContext("application-service.xml");
 		bootstrap.group(group, workGroup);
 		bootstrap.childOption(ChannelOption.WRITE_SPIN_COUNT, 256);
 		
 		bootstrap.localAddress(new InetSocketAddress(port));// 绑定端口
 		bootstrap.option(ChannelOption.SO_BACKLOG, sobacklog);
 		try {
-			bootstrap.childHandler(new MyChannelInitializer(applicationContext));
+			bootstrap.childHandler(new MyChannelInitializer());
 			ChannelFuture f = bootstrap.bind().sync();// 实际绑定操作
 			System.out.println(MqttTcpServer.class.getName() + " 服务器启动成功 " + f.channel().localAddress());
-
 			f.channel().closeFuture().sync();// ;// 等待 服务器关闭
 		} catch (Exception e) {
 			e.printStackTrace();

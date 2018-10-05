@@ -1,9 +1,13 @@
 package io.mqttpush.mqttserver.service;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
+import io.mqttpush.mqttserver.beans.ConstantBean;
+import io.mqttpush.mqttserver.beans.ServiceBeans;
+import io.mqttpush.mqttserver.util.ByteBufEncodingUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
@@ -24,60 +28,59 @@ public class ChannelUserService {
 
 	Logger logger = Logger.getLogger(getClass());
 
+
 	/**
 	 * 用于根据登录的客户端标识找channel
-	 */
-	ConcurrentHashMap<String, Channel> str2channel = new ConcurrentHashMap<>();
-
-	/**
-	 * 判断是否登录 处理重复登录
 	 * 
-	 * @param ident
+	 * 这里不需要线程安全的Map
 	 */
-	public void processReLogin(String ident) {
-
-		if (str2channel.containsKey(ident)) {// 重复登录
-
-			Channel channelold = str2channel.get(ident);
-			str2channel.remove(ident);
-			channelold.close();
-			logger.debug("重复登录关闭以前的channel" + channelold);
-		}
-	}
-
+	Map<String, Channel> str2channel = new ConcurrentHashMap<>();
+	
+	
+	MessagePushService messagePushService;
 	/**
 	 * 退出
 	 * 
 	 * @param handlerContext
 	 */
 	public void loginout(Channel channel) {
+	
+		String deviceId = deviceId(channel);
 
-		String iden = deviceId(channel);
-
-			if (iden != null && str2channel.containsKey(iden)){
-				if(str2channel.get(iden)==channel){
-					str2channel.remove(iden);
+			if (deviceId != null && str2channel.containsKey(deviceId)){
+				if(str2channel.get(deviceId)==channel){
+					str2channel.remove(deviceId);
 				}
 			}
 			
 			if(channel.isActive())
 				channel.close();
 		
-			logger.debug(iden + "退出,在线人数\t" + str2channel.size());
+			
+			ByteBufEncodingUtil bufEncodingUtil=ByteBufEncodingUtil.getInatance();
+			getmessagePushService().send2Admin(bufEncodingUtil.offlineBytebuf(channel.alloc(), deviceId));
+			if(logger.isDebugEnabled()) {
+				logger.debug(deviceId + "退出,在线人数\t" + str2channel.size());
+			}
 			
 
 	}
+	
+	
+
 
 	/**
 	 * 成功登录
+	 * 剔除以前的连接
 	 * 
 	 * @param ident
 	 * @param channel
 	 */
-	public void loginSuccess(String ident, Channel channel) {
+	public void processLoginSuccess(String deviceId, Channel channel) {
 
-		final Channel channel2 =  str2channel.put(ident, channel);;
+		final Channel channel2 =  str2channel.put(deviceId, channel);
 		if (channel2 != null) {
+			
 			MqttFixedHeader fixedHeader=new MqttFixedHeader(
 					MqttMessageType.DISCONNECT, 
 					false,
@@ -95,11 +98,16 @@ public class ChannelUserService {
 			
 		}
 
-		AttributeKey<String> deviceKey = AttributeKey.valueOf("deviceId");
-		AttributeKey<Boolean> loginKey = AttributeKey.valueOf("login");
-		channel.attr(deviceKey).set(ident);
-		channel.attr(loginKey).set(true);
-		logger.debug(ident + "登陆成功");
+		
+	
+		channel.attr(ConstantBean.deviceKey).set(deviceId);
+		channel.attr(ConstantBean.loginKey).set(true);
+		
+		ByteBufEncodingUtil bufEncodingUtil=ByteBufEncodingUtil.getInatance();
+		getmessagePushService().send2Admin(bufEncodingUtil.onlineBytebuf(channel.alloc(), deviceId));
+		if(logger.isDebugEnabled()) {
+			logger.debug(deviceId + "登录成功,在线人数\t" + str2channel.size());
+		}
 
 	}
 
@@ -143,6 +151,15 @@ public class ChannelUserService {
 
 	public Channel channel(String deviceId) {
 		return str2channel.get(deviceId);
+	}
+	
+	
+	MessagePushService getmessagePushService() {
+		
+		if(messagePushService==null) {
+			messagePushService=ServiceBeans.getInstance().getMessagePushService();
+		}
+		return  messagePushService;
 	}
 
 }

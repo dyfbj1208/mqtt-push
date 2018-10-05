@@ -1,5 +1,7 @@
 //package io.mqttpush.mqttserver.service;
 //
+//import java.io.BufferedReader;
+//import java.io.InputStreamReader;
 //import java.io.Serializable;
 //import java.lang.reflect.Field;
 //import java.lang.reflect.Method;
@@ -12,8 +14,23 @@
 //import java.util.Map.Entry;
 //import java.util.concurrent.ConcurrentHashMap;
 //
-//import org.springframework.beans.factory.annotation.Autowired;
-//
+//import io.netty.bootstrap.Bootstrap;
+//import io.netty.channel.Channel;
+//import io.netty.channel.ChannelFuture;
+//import io.netty.channel.ChannelInitializer;
+//import io.netty.channel.ChannelOption;
+//import io.netty.channel.ChannelPipeline;
+//import io.netty.channel.EventLoopGroup;
+//import io.netty.channel.nio.NioEventLoopGroup;
+//import io.netty.channel.socket.SocketChannel;
+//import io.netty.channel.socket.nio.NioSocketChannel;
+//import io.netty.example.redis.RedisClientHandler;
+//import io.netty.handler.codec.redis.RedisArrayAggregator;
+//import io.netty.handler.codec.redis.RedisBulkStringAggregator;
+//import io.netty.handler.codec.redis.RedisDecoder;
+//import io.netty.handler.codec.redis.RedisEncoder;
+//import io.netty.proxy.ClientHandle;
+//import io.netty.util.concurrent.GenericFutureListener;
 //import redis.clients.jedis.Jedis;
 //import redis.clients.jedis.JedisPool;
 ///**
@@ -24,10 +41,13 @@
 // */
 //public class RedisService {
 //
-//	@Autowired
-//	JedisPool jedisPool;
 //	
+//
 //	private String auth;
+//	
+//	int port=6379;
+//	String host="localhost";
+//	Channel redisChannel;
 //	
 //	SimpleDateFormat dateFormat=new SimpleDateFormat("yyy-MM-dd HH:mm:ss");
 //	
@@ -36,6 +56,33 @@
 //	
 //	ConcurrentHashMap<Class, Map<String, Method>> entySmethod = new ConcurrentHashMap<Class, Map<String, Method>>();
 //	
+//	public RedisService() {
+//		
+//	    Bootstrap b = new Bootstrap();
+//		EventLoopGroup group = new NioEventLoopGroup();
+//		b.group(group).
+//		channel(NioSocketChannel.class).
+//		option(ChannelOption.TCP_NODELAY, true).handler(new ChannelInitializer<SocketChannel>() {
+//
+//			@Override
+//			protected void initChannel(SocketChannel ch) throws Exception {
+//			
+//				   ChannelPipeline p = ch.pipeline();
+//                   p.addLast(new RedisDecoder());
+//                   p.addLast(new RedisBulkStringAggregator());
+//                   p.addLast(new RedisArrayAggregator());
+//                   p.addLast(new RedisEncoder());
+//                   
+//                   
+//			}
+//			
+//			
+//		});
+//		
+//		
+//		redisChannel= b.connect(host, port).channel();
+//	  
+//	}
 //	
 //	
 //	protected  void  saveSerializable(String group,String iden,Serializable serializable){

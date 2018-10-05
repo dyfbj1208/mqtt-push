@@ -3,12 +3,10 @@ package io.mqttpush.mqttserver.handle;
 import java.util.List;
 
 import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 
+import io.mqttpush.mqttserver.beans.ServiceBeans;
 import io.mqttpush.mqttserver.service.ChannelUserService;
 import io.mqttpush.mqttserver.service.TopicService;
-import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessage;
@@ -19,6 +17,8 @@ import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import io.netty.handler.codec.mqtt.MqttSubAckPayload;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttTopicSubscription;
+import io.netty.handler.codec.mqtt.MqttUnsubAckMessage;
+import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 
 /**
  * 处理订阅的handle
@@ -26,28 +26,21 @@ import io.netty.handler.codec.mqtt.MqttTopicSubscription;
  * @author acer
  *
  */
-@Sharable
 public class SubServiceHandle extends AbstractHandle {
 
 	Logger logger = Logger.getLogger(getClass());
-	
-	
-	ApplicationContext atx;
-	
-	@Autowired
+
 	ChannelUserService channelUserService;
-	
-	@Autowired
+
 	TopicService topService;
-	
 
 	
-	
-
-	public SubServiceHandle(ApplicationContext atx) {
-		this.atx=atx;
-		channelUserService=atx.getBean(ChannelUserService.class);
-		topService=atx.getBean(TopicService.class);
+	public SubServiceHandle() {
+		
+		ServiceBeans serviceBeans=ServiceBeans.getInstance();
+		
+		channelUserService = serviceBeans.getChannelUserService();
+		topService = serviceBeans.getTopicService();
 	}
 
 	@Override
@@ -62,7 +55,7 @@ public class SubServiceHandle extends AbstractHandle {
 				sub(ctx, (MqttSubscribeMessage) message);
 				break;
 			case UNSUBSCRIBE:
-				;//未实现
+				 unSub(ctx, (MqttUnsubscribeMessage) msg);
 			default:
 				ctx.fireChannelRead(msg);
 				break;
@@ -89,13 +82,22 @@ public class SubServiceHandle extends AbstractHandle {
 		List<MqttTopicSubscription> list = subscribeMessage.payload().topicSubscriptions();
 
 	
-		String deviceId=channelUserService.deviceId(ctx.channel());
+	
 		int[] qoslevels = new int[list.size()];
 		int i = 0;
 		for (MqttTopicSubscription subscription : list) {
 			qoslevels[i] = subscription.qualityOfService().value();
-			topService.subscribe(deviceId, subscription.topicName(), subscription.qualityOfService());
-			logger.debug(""+deviceId+"订阅了"+subscription.topicName()+subscription.qualityOfService());
+			String topicName=subscription.topicName();
+			topService.subscribe(ctx.channel(), topicName, subscription.qualityOfService());
+		
+			
+			if(logger.isDebugEnabled()) {
+				
+				String deviceId=channelUserService.deviceId(ctx.channel());
+				logger.debug(""+deviceId+"订阅了"+topicName+subscription.qualityOfService());
+			}
+			
+			
 		}
 
 		if (qoslevels.length > 0) {
@@ -107,6 +109,33 @@ public class SubServiceHandle extends AbstractHandle {
 		}
 	
 
+	}
+	
+	/**
+	 *取消订阅
+	 * @param ctx
+	 * @param unsubscribeMessage
+	 */
+	public void unSub(final ChannelHandlerContext ctx, MqttUnsubscribeMessage unsubscribeMessage) {
+		
+		MqttQoS mqttQoS = unsubscribeMessage.fixedHeader().qosLevel();
+
+		MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.SUBACK, false, mqttQoS, false, 0);
+
+		List<String> list = unsubscribeMessage.payload().topics();
+		
+		final String  deviceId=channelUserService.deviceId(ctx.channel());
+		
+		if(list!=null&&!list.isEmpty()) {
+			list.forEach((topic)->{
+				
+				topService.unscribe(deviceId, topic);
+			});
+		}
+
+		MqttUnsubAckMessage unsubAckMessage=new MqttUnsubAckMessage(fixedHeader, MqttMessageIdVariableHeader.from(unsubscribeMessage.variableHeader().messageId()));
+		
+		ctx.write(unsubAckMessage);
 	}
 
 	

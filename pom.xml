@@ -6,13 +6,16 @@
   <packaging>pom</packaging>
   <modules>
   	<module>mqtt-server</module>
-  	<module>websocket-getway</module>
+  	<module>mqtt-getway</module>
+  	<module>mqtt-admin</module>
+  	<module>mqtt-commons</module>
   </modules>
   
      <properties>    
  	 <maven.compiler.source>1.8</maven.compiler.source>    
  	 <maven.compiler.target>1.8</maven.compiler.target>    
-	 <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>    
+	 <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion> 
+	 <netty-version>4.1.16.Final</netty-version>   
 	</properties> 
 	 
   <dependencies>
@@ -23,11 +26,10 @@
 			<version>1.2.17</version>
 		</dependency>
 		
-		
   		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
-			<version>4.1.6.Final</version>
+			<version>${netty-version}</version>
 		</dependency>
   </dependencies>
 </project>

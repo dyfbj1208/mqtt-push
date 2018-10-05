@@ -7,13 +7,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import io.mqttpush.mqttserver.entity.DeviceMq;
-import io.mqttpush.mqttserver.entity.MsgRep;
-import io.mqttpush.mqttserver.entity.SendMsgStatus;
+import io.mqttpush.mqttserver.beans.DeviceMq;
+import io.mqttpush.mqttserver.beans.MsgRep;
+import io.mqttpush.mqttserver.beans.SendMsgStatus;
+import io.mqttpush.mqttserver.beans.ServiceBeans;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 
 /**
  * 管理消息队的服务 管理设备的消息队列
@@ -33,12 +32,11 @@ public class MQManagerService {
 	 */
 	private int usermsgsize = 1;
 
-	private int CORE_SIZE = 4;
+	int CORE_SIZE = 4;
 
 	Logger logger = Logger.getLogger(getClass());
 	
-
-	@Autowired
+	
 	AnsyncService ansyncService;
 	/**
 	 * 未成功发送的队列
@@ -49,7 +47,7 @@ public class MQManagerService {
 	/**
 	 * 消息 队列
 	 */
-	ConcurrentHashMap<Integer, MsgRep> msgRepsque;
+	private ConcurrentHashMap<Integer, MsgRep> msgRepsque;
 
 	ConcurrentHashMap<String, BlockingQueue<SendMsgStatus>> deviceSendableMQ;
 
@@ -58,6 +56,8 @@ public class MQManagerService {
 		unsucQue = new LinkedBlockingQueue<>(10);
 		msgRepsque = new ConcurrentHashMap<>();
 		deviceSendableMQ = new ConcurrentHashMap<>();
+		
+		ansyncService=ServiceBeans.getInstance().getAnsyncService();
 	}
 
 	/**

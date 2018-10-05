@@ -1,14 +1,15 @@
 package io.mqttpush.mqttserver.handle;
 
 import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 
-import io.mqttpush.mqttserver.entity.SendableMsg;
+import io.mqttpush.mqttserver.beans.ConstantBean;
+import io.mqttpush.mqttserver.beans.SendableMsg;
+import io.mqttpush.mqttserver.beans.ServiceBeans;
 import io.mqttpush.mqttserver.service.AnsyncService;
 import io.mqttpush.mqttserver.service.ChannelUserService;
 import io.mqttpush.mqttserver.service.MQManagerService;
 import io.mqttpush.mqttserver.service.MessagePushService;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
@@ -19,6 +20,7 @@ import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
@@ -29,38 +31,29 @@ import io.netty.util.concurrent.Future;
  * @author tzj
  *
  */
-@Sharable
 public class PushServiceHandle extends AbstractHandle {
 
 	
 	Logger logger = Logger.getLogger(getClass());
 
-	
-	@Autowired
 	ChannelUserService channelUserService;
 
-	@Autowired
 	MQManagerService mqservice;
 
-	@Autowired
 	MessagePushService messagePushService;
-	
-//	@Autowired
-//	MsgService msgService;
-	
-	@Autowired
-	AnsyncService ansyncService;
-	
-	
-	ApplicationContext atx;
 
-	public PushServiceHandle(ApplicationContext atx) {
-		this.atx=atx;
+
+	AnsyncService ansyncService;
+
+
+	public PushServiceHandle() {
+	
+		ServiceBeans serviceBeans=ServiceBeans.getInstance();
 		
-		channelUserService=atx.getBean(ChannelUserService.class);
-		ansyncService=atx.getBean(AnsyncService.class);
-		messagePushService=atx.getBean(MessagePushService.class);
-		mqservice=atx.getBean(MQManagerService.class);
+		channelUserService = serviceBeans.getChannelUserService();
+		ansyncService = serviceBeans.getAnsyncService();
+		mqservice = serviceBeans.getManagerService();
+		messagePushService=serviceBeans.getMessagePushService();
 		
 	}
 	
@@ -164,8 +157,6 @@ public class PushServiceHandle extends AbstractHandle {
 				new MqttPubAckMessage(fixedHeader, MqttMessageIdVariableHeader.from(variableHeader.messageId()));
 		ctx.write(ackMessage);
 		
-		//logger.debug(ctx+"释放消息消息"+variableHeader.messageId());
-
 	}
 
 	/**
@@ -190,10 +181,14 @@ public class PushServiceHandle extends AbstractHandle {
 				new MqttPubAckMessage(fixedHeader, MqttMessageIdVariableHeader.from(variableHeader.messageId()));
 		ctx.write(ackMessage);
 		
-		AttributeKey<Future> taskSend=AttributeKey.valueOf("recv:"+variableHeader.messageId());
-		if(ctx.channel().hasAttr(taskSend)){
-			ctx.channel().attr(taskSend).getAndRemove().cancel(true);
-			//logger.debug(ctx+"收到消息");
+		Channel channel=ctx.channel();
+		
+		if(channel.hasAttr(ConstantBean.LASTSENT_KEY)) {			
+			Attribute<SendableMsg> attribute=channel.attr(ConstantBean.LASTSENT_KEY);
+			if(attribute!=null) {
+				attribute.set(null);
+			}
+			
 		}
 
 

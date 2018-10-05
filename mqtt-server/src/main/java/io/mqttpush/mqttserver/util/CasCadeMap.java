@@ -89,8 +89,8 @@ public class CasCadeMap<K, V> extends ConcurrentHashMap<CaseCadeKey<K>, Collecti
 		if (!containsKey(key))
 			key = concurrentHashMap.get(key.kvalue);
 
-		Collection<V> collection=get(key);
-		if(collection!=null)
+//		Collection<V> collection=get(key);
+//		if(collection!=null)
 		get(key).forEach(action);
 
 		if (key.childrenKeyFirst != null) {

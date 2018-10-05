@@ -1,4 +1,4 @@
-package io.mqttpush.mqttserver.entity;
+package io.mqttpush.mqttserver.beans;
 
 import io.netty.buffer.ByteBuf;
 
