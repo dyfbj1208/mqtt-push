@@ -34,7 +34,7 @@ public class ChannelUserService {
 	 * 
 	 * 这里不需要线程安全的Map
 	 */
-	Map<String, Channel> str2channel = new ConcurrentHashMap<>();
+	ConcurrentHashMap<String, Channel> str2channel = new ConcurrentHashMap<>(64);
 	
 	
 	MessagePushService messagePushService;
@@ -46,21 +46,24 @@ public class ChannelUserService {
 	public void loginout(Channel channel) {
 	
 		String deviceId = deviceId(channel);
-
-			if (deviceId != null && str2channel.containsKey(deviceId)){
-				if(str2channel.get(deviceId)==channel){
-					str2channel.remove(deviceId);
+			
+			synchronized (deviceId) {
+				
+				if (deviceId != null && str2channel.containsKey(deviceId)){
+					if(str2channel.get(deviceId)==channel){
+						str2channel.remove(deviceId);
+					}
 				}
-			}
+				
+				if(channel.isActive())
+					channel.close();
 			
-			if(channel.isActive())
-				channel.close();
-		
-			
-			ByteBufEncodingUtil bufEncodingUtil=ByteBufEncodingUtil.getInatance();
-			getmessagePushService().send2Admin(bufEncodingUtil.offlineBytebuf(channel.alloc(), deviceId));
-			if(logger.isDebugEnabled()) {
-				logger.debug(deviceId + "退出,在线人数\t" + str2channel.size());
+				
+				ByteBufEncodingUtil bufEncodingUtil=ByteBufEncodingUtil.getInatance();
+				getmessagePushService().send2Admin(bufEncodingUtil.offlineBytebuf(channel.alloc(), deviceId));
+				if(logger.isDebugEnabled()) {
+					logger.debug(deviceId + "退出,在线人数\t" + str2channel.size());
+				}
 			}
 			
 
@@ -78,33 +81,42 @@ public class ChannelUserService {
 	 */
 	public void processLoginSuccess(String deviceId, Channel channel) {
 
-		final Channel channel2 =  str2channel.put(deviceId, channel);
-		if (channel2 != null) {
+		
+		synchronized (deviceId) {
 			
-			MqttFixedHeader fixedHeader=new MqttFixedHeader(
-					MqttMessageType.DISCONNECT, 
-					false,
-					MqttQoS.AT_MOST_ONCE, false, 0);
-			MqttMessage dismessage=new MqttMessage(fixedHeader);
-			ChannelFuture channelFuture=channel2.writeAndFlush(dismessage);
-			channelFuture.addListener(new GenericFutureListener<Future<Void>>() {
-				@Override
-				public void operationComplete(Future<Void> future) throws Exception {
-					channel2.close();
-				}
+			final Channel channel2 =  str2channel.put(deviceId, channel);
+			if (channel2 != null) {
 				
-			});
+				/**
+				 * 
+				 * 算了，直接关闭了拉到
+				 * 
+				 */
+//				MqttFixedHeader fixedHeader=new MqttFixedHeader(
+//						MqttMessageType.DISCONNECT, 
+//						false,
+//						MqttQoS.AT_MOST_ONCE, false, 0);
+//				MqttMessage dismessage=new MqttMessage(fixedHeader);
+//				ChannelFuture channelFuture=channel2.writeAndFlush(dismessage);
+//				channelFuture.addListener(new GenericFutureListener<Future<Void>>() {
+//					@Override
+//					public void operationComplete(Future<Void> future) throws Exception {
+//						channel2.close();
+//					}
+//					
+//				});
+
+				channel2.close();
+				
+				
+			}
+			channel.attr(ConstantBean.deviceKey).set(deviceId);
+			channel.attr(ConstantBean.loginKey).set(true);
 			
+			ByteBufEncodingUtil bufEncodingUtil=ByteBufEncodingUtil.getInatance();
+			getmessagePushService().send2Admin(bufEncodingUtil.onlineBytebuf(channel.alloc(), deviceId));
 			
 		}
-
-		
-	
-		channel.attr(ConstantBean.deviceKey).set(deviceId);
-		channel.attr(ConstantBean.loginKey).set(true);
-		
-		ByteBufEncodingUtil bufEncodingUtil=ByteBufEncodingUtil.getInatance();
-		getmessagePushService().send2Admin(bufEncodingUtil.onlineBytebuf(channel.alloc(), deviceId));
 		if(logger.isDebugEnabled()) {
 			logger.debug(deviceId + "登录成功,在线人数\t" + str2channel.size());
 		}

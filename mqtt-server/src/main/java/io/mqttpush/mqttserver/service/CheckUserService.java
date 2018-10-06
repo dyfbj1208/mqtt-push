@@ -19,7 +19,7 @@ public class CheckUserService {
 
 	Map<String, String> userpwds = new ConcurrentHashMap<String, String>();
 
-	boolean init;
+	volatile boolean init;
 
 	public void init() {
 

@@ -1,14 +1,10 @@
 package io.mqttpush.mqttserver.handle;
 
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-
 import io.mqttpush.mqttserver.beans.ConstantBean;
 import io.mqttpush.mqttserver.beans.SendableMsg;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
-import io.mqttpush.mqttserver.service.AnsyncService;
 import io.mqttpush.mqttserver.service.ChannelUserService;
 import io.mqttpush.mqttserver.service.CheckUserService;
-import io.mqttpush.mqttserver.service.MQManagerService;
 import io.mqttpush.mqttserver.service.MessagePushService;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -43,13 +39,7 @@ public class ConnectionHandle extends AbstractHandle {
 	 */
 	ChannelUserService channelUserService;
 
-	/**
-	 * 
-	 */
-	MQManagerService mqservice;
 	
-	
-	AnsyncService ansyncService;
 	
 	MessagePushService messagePushService;
 	
@@ -61,9 +51,6 @@ public class ConnectionHandle extends AbstractHandle {
 		
 		channelUserService = serviceBeans.getChannelUserService();
 		checkUserService =serviceBeans.getCheckUserService();
-
-		ansyncService = serviceBeans.getAnsyncService();
-		mqservice = serviceBeans.getManagerService();
 
 		messagePushService=serviceBeans.getMessagePushService();
 	}

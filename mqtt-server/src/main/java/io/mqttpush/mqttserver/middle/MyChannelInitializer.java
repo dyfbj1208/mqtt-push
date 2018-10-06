@@ -1,9 +1,12 @@
-package io.mqttpush.mqttserver.handle;
+package io.mqttpush.mqttserver.middle;
 
 
 
 import org.apache.log4j.Logger;
 
+import io.mqttpush.mqttserver.handle.ConnectionHandle;
+import io.mqttpush.mqttserver.handle.PushServiceHandle;
+import io.mqttpush.mqttserver.handle.SubServiceHandle;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.mqtt.MqttDecoder;
@@ -25,10 +28,7 @@ public class MyChannelInitializer extends ChannelInitializer<SocketChannel>{
 	@Override
 	protected void initChannel(SocketChannel ch) throws Exception {
 		
-		logger.debug(ch+"链路链接");
-		
-		//addWebSocket(ch.pipeline())
-		
+
 	    ch.pipeline().addLast(new LoggingHandler(LogLevel.DEBUG))
 	    .addLast(MqttEncoder.INSTANCE)
 	    .addLast(new MqttDecoder())

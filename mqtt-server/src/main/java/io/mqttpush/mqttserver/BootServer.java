@@ -7,7 +7,7 @@ public class BootServer {
 	public static void main(String[] args) {
 		MqttTcpServer mqttServer=new MqttTcpServer();
 		try {
-			mqttServer.start(10000);
+			mqttServer.start();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

@@ -5,12 +5,9 @@ import org.apache.log4j.Logger;
 import io.mqttpush.mqttserver.beans.ConstantBean;
 import io.mqttpush.mqttserver.beans.SendableMsg;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
-import io.mqttpush.mqttserver.service.AnsyncService;
 import io.mqttpush.mqttserver.service.ChannelUserService;
-import io.mqttpush.mqttserver.service.MQManagerService;
 import io.mqttpush.mqttserver.service.MessagePushService;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessage;
@@ -21,9 +18,7 @@ import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.Attribute;
-import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.concurrent.Future;
 
 /**
  * 处理消息发布，发布释放，发布完成的hannel
@@ -33,33 +28,25 @@ import io.netty.util.concurrent.Future;
  */
 public class PushServiceHandle extends AbstractHandle {
 
-	
 	Logger logger = Logger.getLogger(getClass());
 
 	ChannelUserService channelUserService;
 
-	MQManagerService mqservice;
-
 	MessagePushService messagePushService;
 
-
-	AnsyncService ansyncService;
-
-
 	public PushServiceHandle() {
-	
-		ServiceBeans serviceBeans=ServiceBeans.getInstance();
-		
+
+		ServiceBeans serviceBeans = ServiceBeans.getInstance();
+
 		channelUserService = serviceBeans.getChannelUserService();
-		ansyncService = serviceBeans.getAnsyncService();
-		mqservice = serviceBeans.getManagerService();
-		messagePushService=serviceBeans.getMessagePushService();
-		
+
+		messagePushService = serviceBeans.getMessagePushService();
+
 	}
-	
+
 	@Override
 	public void onMessage(ChannelHandlerContext ctx, MqttMessage msg) {
-	
+
 		if (msg instanceof MqttMessage) {
 
 			MqttMessage message = (MqttMessage) msg;
@@ -86,7 +73,7 @@ public class PushServiceHandle extends AbstractHandle {
 			}
 
 		}
-		
+
 		else
 			ctx.channel().close();
 	}
@@ -102,43 +89,41 @@ public class PushServiceHandle extends AbstractHandle {
 		MqttQoS mqttQoS = messagepub.fixedHeader().qosLevel();
 
 		MqttFixedHeader fixedHeader = null;
-		MqttPublishVariableHeader header=messagepub.variableHeader();
-		int ackmsgid = header.messageId();
-		
-		switch(mqttQoS){
-			case EXACTLY_ONCE:
-				fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.EXACTLY_ONCE, false, 0);
-				MqttMessageIdVariableHeader connectVariableHeader = MqttMessageIdVariableHeader.from(ackmsgid);
-				MqttPubAckMessage ackMessage = new MqttPubAckMessage(fixedHeader, connectVariableHeader);
-				ctx.write(ackMessage);
-				break;
-				default:
-					fixedHeader = new MqttFixedHeader(MqttMessageType.PUBACK, false, mqttQoS, false, 0);
-					MqttMessage message=new MqttMessage(fixedHeader);
-					ctx.write(message);
-					break;
-			
+		MqttPublishVariableHeader header = messagepub.variableHeader();
+		int ackmsgid = header.packetId();
+
+		switch (mqttQoS) {
+		case EXACTLY_ONCE:
+			fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.EXACTLY_ONCE, false, 0);
+			MqttMessageIdVariableHeader connectVariableHeader = MqttMessageIdVariableHeader.from(ackmsgid);
+			MqttPubAckMessage ackMessage = new MqttPubAckMessage(fixedHeader, connectVariableHeader);
+			ctx.write(ackMessage);
+			break;
+		default:
+			fixedHeader = new MqttFixedHeader(MqttMessageType.PUBACK, false, mqttQoS, false, 0);
+			MqttMessage message = new MqttMessage(fixedHeader);
+			ctx.write(message);
+			break;
+
 		}
-		
-		SendableMsg sendableMsg = new SendableMsg(
-				header.topicName(),
-				channelUserService.deviceId(ctx.channel()),messagepub.content());
+
+		SendableMsg sendableMsg = new SendableMsg(header.topicName(), channelUserService.deviceId(ctx.channel()),
+				messagepub.content());
 
 		ready2Send(sendableMsg);
-		
 
 	}
-	
+
 	/**
 	 * 准备去发送
+	 * 
 	 * @param channel
 	 * @param topname
 	 * @param messageid
 	 * @param content
 	 */
-	private void ready2Send(
-			SendableMsg sendableMsg){
-		
+	private void ready2Send(SendableMsg sendableMsg) {
+
 		messagePushService.sendMsg(sendableMsg);
 	}
 
@@ -149,14 +134,22 @@ public class PushServiceHandle extends AbstractHandle {
 
 		MqttMessageIdVariableHeader variableHeader = (MqttMessageIdVariableHeader) messagepub.variableHeader();
 
-		MqttFixedHeader fixedHeader = 
-				new MqttFixedHeader(MqttMessageType.PUBCOMP, false, MqttQoS.EXACTLY_ONCE, false, 0);
+		MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBCOMP, false, MqttQoS.EXACTLY_ONCE, false,
+				0);
 
-
-		MqttPubAckMessage ackMessage = 
-				new MqttPubAckMessage(fixedHeader, MqttMessageIdVariableHeader.from(variableHeader.messageId()));
+		MqttPubAckMessage ackMessage = new MqttPubAckMessage(fixedHeader,
+				MqttMessageIdVariableHeader.from(variableHeader.messageId()));
 		ctx.write(ackMessage);
-		
+
+		Channel channel = ctx.channel();
+
+		if (channel.hasAttr(ConstantBean.LASTSENT_KEY)) {
+			Attribute<SendableMsg> attribute = channel.attr(ConstantBean.LASTSENT_KEY);
+			if (attribute != null) {
+				attribute.set(null);
+			}
+
+		}
 	}
 
 	/**
@@ -172,30 +165,16 @@ public class PushServiceHandle extends AbstractHandle {
 
 		MqttMessageIdVariableHeader variableHeader = (MqttMessageIdVariableHeader) messagepub.variableHeader();
 
+		MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.EXACTLY_ONCE, false,
+				0);
+		;
 
-		MqttFixedHeader fixedHeader=
-				new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.EXACTLY_ONCE, false, 0);;
-
-
-		MqttPubAckMessage ackMessage = 
-				new MqttPubAckMessage(fixedHeader, MqttMessageIdVariableHeader.from(variableHeader.messageId()));
+		MqttPubAckMessage ackMessage = new MqttPubAckMessage(fixedHeader,
+				MqttMessageIdVariableHeader.from(variableHeader.messageId()));
 		ctx.write(ackMessage);
-		
-		Channel channel=ctx.channel();
-		
-		if(channel.hasAttr(ConstantBean.LASTSENT_KEY)) {			
-			Attribute<SendableMsg> attribute=channel.attr(ConstantBean.LASTSENT_KEY);
-			if(attribute!=null) {
-				attribute.set(null);
-			}
-			
-		}
 
+		
 
 	}
-
-	
-
-	
 
 }

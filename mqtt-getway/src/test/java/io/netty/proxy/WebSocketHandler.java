@@ -31,7 +31,7 @@ public class WebSocketHandler extends ChannelInboundHandlerAdapter {
 	
 	final int mqttport=10000;
 
-	
+	ChannelFuture channelFuture;
 	/**
 	 * websocket->MQTT
 	 */
@@ -76,7 +76,7 @@ public class WebSocketHandler extends ChannelInboundHandlerAdapter {
 		/**
 		 * 连接后端MQTT 服务器，绑定 前后连接
 		 */
-		ChannelFuture channelFuture=b.connect(mqttserver, mqttport).sync();
+		channelFuture=b.connect(mqttserver, mqttport).sync();
 		ab2bcChannels.put(ctx.channel(), channelFuture.channel());
 		bc2abChannels.put(channelFuture.channel(), ctx.channel());
 		
@@ -86,9 +86,13 @@ public class WebSocketHandler extends ChannelInboundHandlerAdapter {
 
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-
+		
 		System.out.println("用户下线: " + ctx.channel().id().asLongText());
 		super.channelInactive(ctx);
+		
+		if(channelFuture!=null) {
+			channelFuture.channel().close();
+		}
 	}
 
 	@Override

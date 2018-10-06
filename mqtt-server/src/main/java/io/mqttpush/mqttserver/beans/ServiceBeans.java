@@ -2,10 +2,8 @@ package io.mqttpush.mqttserver.beans;
 
 import org.apache.log4j.Logger;
 
-import io.mqttpush.mqttserver.service.AnsyncService;
 import io.mqttpush.mqttserver.service.ChannelUserService;
 import io.mqttpush.mqttserver.service.CheckUserService;
-import io.mqttpush.mqttserver.service.MQManagerService;
 import io.mqttpush.mqttserver.service.MessagePushService;
 import io.mqttpush.mqttserver.service.TopicService;
 
@@ -20,13 +18,10 @@ public class ServiceBeans {
 	
 	Logger logger=Logger.getLogger(getClass());
 	
-	
-	 AnsyncService  ansyncService;
 	 ChannelUserService channelUserService;
 	 CheckUserService checkUserService;
 	 MessagePushService messagePushService;
 	 TopicService topicService;
-	 MQManagerService managerService;
 	 
 	
 	 
@@ -46,16 +41,6 @@ public class ServiceBeans {
 		 return serviceBeans;
 	 }
 	 
-	/**
-	 * @return the ansyncService
-	 */
-	public AnsyncService getAnsyncService() {
-		
-		if(ansyncService==null) {
-			ansyncService=new AnsyncService();
-		}
-		return ansyncService;
-	}
 	/**
 	 * @return the channelUserService
 	 */
@@ -96,17 +81,6 @@ public class ServiceBeans {
 		}
 		return topicService;
 	}
-	/**
-	 * @return the managerService
-	 */
-	public MQManagerService getManagerService() {
-		
-		if(managerService==null) {
-			managerService=new MQManagerService();
-		}
-		return managerService;
-	}
-
 	
 	 
 	 

@@ -2,7 +2,6 @@ package io.mqttpush.mqttserver.middle;
 
 import java.net.InetSocketAddress;
 
-import io.mqttpush.mqttserver.handle.MyChannelInitializer;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
@@ -22,7 +21,7 @@ public class MqttTcpServer {
 
 	private int sobacklog = 1024;
 
-	private int port = 1000;
+	private int port = 10000;
 
 	private int bossthreads = Runtime.getRuntime().availableProcessors();
 
@@ -30,7 +29,7 @@ public class MqttTcpServer {
 
 	private int readtimeout = 10000;
 
-	public void start(int port) throws InterruptedException {
+	public void start() throws InterruptedException {
 
 		ServerBootstrap bootstrap = new ServerBootstrap();// 启动辅助类
 		EventLoopGroup group = null;
