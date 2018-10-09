@@ -5,7 +5,6 @@ import java.util.Arrays;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.util.ReferenceCountUtil;
 
 /**
  * 消息实体类

@@ -1,6 +1,6 @@
 package io.mqttpush.mqttserver.util;
 
-import io.mqttpush.mqttserver.util.AdminMessage.MessageType;
+import io.mqttpush.mqttserver.util.ChatMessage.MessageType;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 
@@ -11,19 +11,6 @@ import io.netty.buffer.ByteBufAllocator;
  */
 public class ByteBufEncodingUtil {
 
-	
-//
-//	public static  final String onlineprefix="+";
-//	
-//	/**
-//	 * 
-//	 */
-//	public static  final String offlineprefix="-";
-//	
-//	/**
-//	 * 暂存消息的前缀
-//	 */
-//	public static  final String stashlineprefix="&";
 	
 	/**
 //	 *上线报文的前缀
@@ -96,20 +83,28 @@ public class ByteBufEncodingUtil {
 	}
 	
 
-
-	public AdminMessage dencoding(ByteBuf buf) {
+	/**
+	 * 解码
+	 * @param buf
+	 * @return
+	 */
+	public ChatMessage  dencoding(ByteBuf buf) {
 		
 		int type=buf.readByte();
 	
 		
-		AdminMessage adminMessage=null;
+		ChatMessage adminMessage=null;
 		byte [] bs=null;
 		switch(type) {
 			case  '+':
+				bs =new byte[buf.readableBytes()];
+				buf.readBytes(bs);
+				adminMessage=new ChatMessage(MessageType.ONLINE, new String(bs));
+				break;
 			case  '-':
 				bs =new byte[buf.readableBytes()];
 				buf.readBytes(bs);
-				adminMessage=new AdminMessage(MessageType.OFFLINE, new String(bs));
+				adminMessage=new ChatMessage(MessageType.OFFLINE, new String(bs));
 				break;
 			case '&':
 				

@@ -27,12 +27,22 @@ public class ConstantBean {
 	public static final AttributeKey<Boolean> loginKey = AttributeKey.valueOf("login");
 	
 	
-	
 	public static final int MAX_ERROR_SENT=3;
 	
 	
 	/**
-	 * 管理员主题
+	 * 管理员接收主题
+	 * 这个主题可以收到发给管理员的消息
 	 */
-	public static final String  adminTopic="/root/admin";
+	public static final String  adminRecivTopic="/root/admin/reciv";
+	
+	/**
+	 * 管理员发送给中间件的主题
+	 * 这个主题可以收到管理员发的消息
+	 */
+	public static final String  adminSendTopic="/root/admin/send";
+	
+	
+	public static final String ONE2ONE_CHAT_PREFIX="/root/chat/one2one/";
+	
 }

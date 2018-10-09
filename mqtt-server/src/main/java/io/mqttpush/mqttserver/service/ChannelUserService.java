@@ -1,6 +1,5 @@
 package io.mqttpush.mqttserver.service;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
@@ -9,14 +8,7 @@ import io.mqttpush.mqttserver.beans.ConstantBean;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
 import io.mqttpush.mqttserver.util.ByteBufEncodingUtil;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.handler.codec.mqtt.MqttFixedHeader;
-import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttMessageType;
-import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.AttributeKey;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 
 /**
  * 管理者登录信息的设备号以及channel
@@ -161,6 +153,11 @@ public class ChannelUserService {
 		return null;
 	}
 
+	/**
+	 * 根据设备号获取channel
+	 * @param deviceId
+	 * @return
+	 */
 	public Channel channel(String deviceId) {
 		return str2channel.get(deviceId);
 	}

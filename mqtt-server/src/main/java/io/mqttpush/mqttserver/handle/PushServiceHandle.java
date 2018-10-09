@@ -106,11 +106,11 @@ public class PushServiceHandle extends AbstractHandle {
 			break;
 
 		}
-
+		
 		SendableMsg sendableMsg = new SendableMsg(header.topicName(), channelUserService.deviceId(ctx.channel()),
 				messagepub.content());
 
-		ready2Send(sendableMsg);
+		ready2Send(sendableMsg,ctx.channel());
 
 	}
 
@@ -122,8 +122,28 @@ public class PushServiceHandle extends AbstractHandle {
 	 * @param messageid
 	 * @param content
 	 */
-	private void ready2Send(SendableMsg sendableMsg) {
-
+	private void ready2Send(SendableMsg sendableMsg,Channel channel) {
+		
+		String topicname=sendableMsg.getTopname();
+		
+		/**
+		 * 如果是点对点发送，直接从主题里面取出deviceid 发送
+		 * 
+		 * 如果是订阅发布发送，则需要走路由
+		 */
+		if(topicname.startsWith(ConstantBean.ONE2ONE_CHAT_PREFIX)) {
+				
+				String deviceId=topicname.substring(ConstantBean.ONE2ONE_CHAT_PREFIX.length());
+				Channel toChannel=channelUserService.channel(deviceId);
+				if(toChannel!=null) {
+					messagePushService.sendMsgForChannel(sendableMsg, toChannel);
+				}
+		
+		}
+		
+		/**
+		 * 让下面继续走，保证多端的情况也可以收到消息
+		 */
 		messagePushService.sendMsg(sendableMsg);
 	}
 

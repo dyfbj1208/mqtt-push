@@ -7,7 +7,7 @@ import java.util.Arrays;
  * @author tianzhenjiu
  *
  */
-public class StashMessage extends AdminMessage{
+public class StashMessage extends ChatMessage{
 
 	
 	Long timestamp;

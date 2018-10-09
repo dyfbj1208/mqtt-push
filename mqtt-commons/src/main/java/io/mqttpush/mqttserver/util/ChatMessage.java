@@ -5,17 +5,23 @@ package io.mqttpush.mqttserver.util;
  * @author tianzhenjiu
  *
  */
-public class AdminMessage {
+public class ChatMessage {
 
 	MessageType type;
 	String deviceId;
 	
+	
+	/**
+	 *上线，下线，暂存此消息,
+	 * @author tianzhenjiu
+	 *
+	 */
 	public static enum MessageType{
 		ONLINE,OFFLINE,STASH
 	}
 	
 	
-	public AdminMessage(MessageType type, String deviceId) {
+	public ChatMessage(MessageType type, String deviceId) {
 		super();
 		this.type = type;
 		this.deviceId = deviceId;

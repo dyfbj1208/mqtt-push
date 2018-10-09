@@ -9,8 +9,8 @@ import io.mqttpush.mqttserver.beans.SendableMsg;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
 import io.mqttpush.mqttserver.exception.SendException;
 import io.mqttpush.mqttserver.exception.SendException.SendError;
-import io.mqttpush.mqttserver.util.AdminMessage.MessageType;
 import io.mqttpush.mqttserver.util.ByteBufEncodingUtil;
+import io.mqttpush.mqttserver.util.ChatMessage.MessageType;
 import io.mqttpush.mqttserver.util.StashMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -60,6 +60,8 @@ public class MessagePushService {
 		Consumer<String> consumer = (deviceId) -> {
 
 			Channel channel = channelUserService.channel(deviceId);
+			
+
 			boolean isfail = false;
 			if (channel != null && channel.isActive()) {
 				try {
@@ -204,7 +206,7 @@ public class MessagePushService {
 		MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, false, MqttQoS.AT_LEAST_ONCE,
 				false, 0);
 
-		MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(ConstantBean.adminTopic,
+		MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(ConstantBean.adminRecivTopic,
 				payload.hashCode());
 
 		MqttPublishMessage mqttPublishMessage = new MqttPublishMessage(mqttFixedHeader, variableHeader, payload);
@@ -219,7 +221,7 @@ public class MessagePushService {
 //		};
 		// topicService.channelsSend(ConstantBean.adminTopic, consumer);
 
-		topicService.channelsForGroup(ConstantBean.adminTopic, mqttPublishMessage);
+		topicService.channelsForGroup(ConstantBean.adminRecivTopic, mqttPublishMessage);
 
 	}
 
