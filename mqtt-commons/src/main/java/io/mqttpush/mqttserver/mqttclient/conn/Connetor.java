@@ -10,6 +10,7 @@ import io.mqttpush.mqttserver.mqttclient.handle.PubHandle;
 import io.mqttpush.mqttserver.mqttclient.handle.SubHandle;
 import io.mqttpush.mqttserver.mqttclient.service.ApiService;
 import io.mqttpush.mqttserver.mqttclient.service.DefaultMessageListener;
+import io.mqttpush.mqttserver.mqttclient.service.MessageListener;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -31,15 +32,15 @@ public class Connetor {
 
 
 	
-	public ChannelFuture connection(Properties properties,final ApiService apiService,final DefaultMessageListener defaultMessageListener) {
+	public ChannelFuture connection(Properties properties,final ApiService apiService,final MessageListener defaultMessageListener) {
 
 
 		String host = (String) properties.getOrDefault("host", "127.0.0.1");
 		Integer remotePort = (Integer) properties.getOrDefault("port", 1000);
 		final Integer pingtime = (Integer) properties.getOrDefault("pingtime", 60);
 		final String deviceId = (String) properties.getOrDefault("deviceId", "0000");
-		final String username = (String) properties.getOrDefault("username", "0000");
-		final String password = (String) properties.getOrDefault("password", "0000");
+		final String username = (String) properties.getOrDefault("username", "user");
+		final String password = (String) properties.getOrDefault("password", "user123456");
 		final String subTopic = (String) properties.getOrDefault("subTopic", null);
 		
 		ChannelFuture f=null;
@@ -66,9 +67,7 @@ public class Connetor {
 		} catch (InterruptedException e) {
 			logger.warn("异常",e);
 			
-		} finally {
-			group.shutdownGracefully();
-		}
+		} 
 		
 		return f;
 	}
