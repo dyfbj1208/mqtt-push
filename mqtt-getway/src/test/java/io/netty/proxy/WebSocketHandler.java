@@ -58,7 +58,7 @@ public class WebSocketHandler extends ChannelInboundHandlerAdapter {
 
 			@Override
 			protected void initChannel(SocketChannel ch) throws Exception {
-			
+				
 				ch.pipeline().addLast(new ClientHandle());
 			}
 			

@@ -63,10 +63,13 @@ public class ByteBufEncodingUtil {
 		 buf.writeInt(bs.length);
 		 buf.writeBytes(bs);
 		 
-		 bs=lastChatDeviceId.getBytes();
-		 buf.writeInt(bs.length);
-		 buf.writeBytes(bs);
-		 
+		 if(lastChatDeviceId==null) {
+			 buf.writeInt(0);
+		 }else {
+			 bs=lastChatDeviceId.getBytes();
+		 	buf.writeInt(bs.length);
+		 	buf.writeBytes(bs);
+		 }
 		 return buf;
 		
 	}
