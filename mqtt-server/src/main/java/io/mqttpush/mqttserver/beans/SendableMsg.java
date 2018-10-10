@@ -17,7 +17,6 @@ public class SendableMsg extends MsgRep{
 	 
 
 	 
-	 private Short shortmsgid;
 	 
 	 
 	 /**
@@ -31,19 +30,13 @@ public class SendableMsg extends MsgRep{
 	 int  dupTimes;
 	 
 	 
-	 public SendableMsg(){
-		 
-	 }
-	 
 
 	public SendableMsg(String topname, String sendclientid, ByteBuf msgContent) {
 		super(topname,sendclientid,msgContent);
-		shortmsgid=getMessageid().shortValue();
 	}
 	
 	public SendableMsg(String topname, String sendclientid, byte[] bs) {
 		super(topname,sendclientid,bs);
-		shortmsgid=getMessageid().shortValue();
 	}
 
 
@@ -66,11 +59,5 @@ public class SendableMsg extends MsgRep{
 		this.dupTimes = dupTimes;
 	}
 
-	public Short getShortmsgid() {
-		return shortmsgid;
-	}
-
-	public void setShortmsgid(Short shortmsgid) {
-		this.shortmsgid = shortmsgid;
-	}
+	
 }

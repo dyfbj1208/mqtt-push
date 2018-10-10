@@ -163,7 +163,7 @@ public class MessagePushService {
 					sendableMsg.getDupTimes() > 0, qosLevel, sendableMsg.isRetain(), 0);
 
 			MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(sendableMsg.getTopname(),
-					sendableMsg.getShortmsgid());
+					sendableMsg.getMessageid());
 
 			MqttPublishMessage mqttPublishMessage = new MqttPublishMessage(mqttFixedHeader, variableHeader, byteBuf);
 			channelFuture = channel.writeAndFlush(mqttPublishMessage);

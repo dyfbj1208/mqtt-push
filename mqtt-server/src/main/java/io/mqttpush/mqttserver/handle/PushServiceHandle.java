@@ -109,7 +109,7 @@ public class PushServiceHandle extends AbstractHandle {
 		
 		SendableMsg sendableMsg = new SendableMsg(header.topicName(), channelUserService.deviceId(ctx.channel()),
 				messagepub.content());
-
+		
 		ready2Send(sendableMsg,ctx.channel());
 
 	}
@@ -137,6 +137,8 @@ public class PushServiceHandle extends AbstractHandle {
 				Channel toChannel=channelUserService.channel(deviceId);
 				if(toChannel!=null) {
 					messagePushService.sendMsgForChannel(sendableMsg, toChannel);
+					//点对点发送的时候会记录最后发送对端的设备id
+					channel.attr(ConstantBean.LASTSENT_DEVICEID).set(deviceId);
 				}
 		
 		}

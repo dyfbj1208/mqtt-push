@@ -34,7 +34,7 @@ public class ByteBufEncodingUtil {
 	/**
 	 * 构建一个上线消息的报文
 	 * @param allocator
-	 * @param deviceId
+	 * @param deviceId 上线的设备
 	 * @return
 	 */
 	public ByteBuf onlineBytebuf(ByteBufAllocator allocator,String deviceId) {
@@ -50,13 +50,22 @@ public class ByteBufEncodingUtil {
 	/**
 	 * 构建一个下线报文 用于内部传输
 	 * @param allocator
-	 * @param deviceId
+	 * @param deviceId  下线的设备
+	 * @param lastChatDeviceId 下线之前最后交谈的那个设备id
 	 * @return
 	 */
-	public ByteBuf offlineBytebuf(ByteBufAllocator allocator,String deviceId) {
+	public ByteBuf offlineBytebuf(ByteBufAllocator allocator,String deviceId,String lastChatDeviceId) {
+		 
 		 ByteBuf buf=allocator.buffer();
 		 buf.writeByte(prefixchars[1]);
-		 buf.writeBytes(deviceId.getBytes());
+		
+		 byte[] bs=deviceId.getBytes();
+		 buf.writeInt(bs.length);
+		 buf.writeBytes(bs);
+		 
+		 bs=lastChatDeviceId.getBytes();
+		 buf.writeInt(bs.length);
+		 buf.writeBytes(bs);
 		 
 		 return buf;
 		
@@ -75,8 +84,10 @@ public class ByteBufEncodingUtil {
 		 ByteBuf buf=allocator.buffer();
 		 buf.writeByte(prefixchars[2]);
 		 buf.writeLong(timestamp);
-		 buf.writeInt(deviceId.length());
-		 buf.writeBytes(deviceId.getBytes());
+		 
+		 byte[] bs=deviceId.getBytes();
+		 buf.writeInt(bs.length);
+		 buf.writeBytes(bs);
 		 buf.writeBytes(content);
 		 
 		 return buf;
@@ -102,9 +113,14 @@ public class ByteBufEncodingUtil {
 				adminMessage=new ChatMessage(MessageType.ONLINE, new String(bs));
 				break;
 			case  '-':
-				bs =new byte[buf.readableBytes()];
+				bs =new byte[buf.readInt()];
 				buf.readBytes(bs);
-				adminMessage=new ChatMessage(MessageType.OFFLINE, new String(bs));
+				
+				byte[] bslast =new byte[buf.readInt()];
+				buf.readBytes(bslast);
+				
+				adminMessage=new OfflineMessage(MessageType.OFFLINE, new String(bs),new String(bslast));
+				
 				break;
 			case '&':
 				
@@ -157,8 +173,7 @@ public class ByteBufEncodingUtil {
 		
 		ByteBufAllocator allocator= ByteBufAllocator.DEFAULT;
 		
-		ByteBuf buf=ByteBufEncodingUtil.getInatance().
-				stashMQByteBuf(allocator, System.currentTimeMillis(), "111", new byte[] {1,2,34,56});
+		ByteBuf buf=ByteBufEncodingUtil.getInatance().offlineBytebuf(allocator, "1111", "asda");
 		
 		buf.resetReaderIndex();
 		System.out.println( ByteBufEncodingUtil.getInatance().dencoding(buf));

@@ -16,6 +16,7 @@ public class ConstantBean {
 	public static final AttributeKey<SendableMsg> LASTSENT_KEY = AttributeKey.valueOf("lastsent");
 	
 	
+	public static final AttributeKey<String> LASTSENT_DEVICEID = AttributeKey.valueOf("lastSendDeviceId");
 	/**
 	 * channnel 获取deviceid的key
 	 */
@@ -42,7 +43,9 @@ public class ConstantBean {
 	 */
 	public static final String  adminSendTopic="/root/admin/send";
 	
-	
+	/**
+	 *点对点通信
+	 */
 	public static final String ONE2ONE_CHAT_PREFIX="/root/chat/one2one/";
 	
 }

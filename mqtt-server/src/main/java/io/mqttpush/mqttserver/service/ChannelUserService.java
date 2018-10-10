@@ -50,9 +50,12 @@ public class ChannelUserService {
 				if(channel.isActive())
 					channel.close();
 			
-				
+				 String lastDeviceId=null;
+				 if(channel.hasAttr(ConstantBean.LASTSENT_DEVICEID)) {
+					 lastDeviceId=channel.attr(ConstantBean.LASTSENT_DEVICEID).get();
+				 }
 				ByteBufEncodingUtil bufEncodingUtil=ByteBufEncodingUtil.getInatance();
-				getmessagePushService().send2Admin(bufEncodingUtil.offlineBytebuf(channel.alloc(), deviceId));
+				getmessagePushService().send2Admin(bufEncodingUtil.offlineBytebuf(channel.alloc(), deviceId,lastDeviceId));
 				if(logger.isDebugEnabled()) {
 					logger.debug(deviceId + "退出,在线人数\t" + str2channel.size());
 				}
