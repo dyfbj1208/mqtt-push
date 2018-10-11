@@ -1,4 +1,4 @@
-package io.mqttpush.mqttserver.mqttclient.handle;
+package io.mqttpush.mqttclient.handle;
 
 import org.apache.log4j.Logger;
 

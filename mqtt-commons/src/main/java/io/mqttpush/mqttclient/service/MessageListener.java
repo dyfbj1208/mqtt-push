@@ -1,4 +1,4 @@
-package io.mqttpush.mqttserver.mqttclient.service;
+package io.mqttpush.mqttclient.service;
 
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 

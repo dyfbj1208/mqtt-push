@@ -1,4 +1,4 @@
-package io.mqttpush.mqttserver.mqttclient.service;
+package io.mqttpush.mqttclient.service;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,6 +8,7 @@ import org.apache.log4j.Logger;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttConnectPayload;
 import io.netty.handler.codec.mqtt.MqttConnectVariableHeader;
@@ -47,7 +48,7 @@ public class DefaultApiService implements ApiService{
 	 * 单例模式
 	 * @return
 	 */
-	public  static DefaultApiService intanceof(){
+	public  static DefaultApiService intance(){
 		
 		if(defaultApiService==null){
 			defaultApiService=new DefaultApiService();
@@ -56,7 +57,7 @@ public class DefaultApiService implements ApiService{
 	}
 	
 	@Override
-	public void login(String deviceId,String username, String password) {
+	public ChannelFuture login(String deviceId,String username, String password) {
 		
 		MqttFixedHeader mqttFixedHeader=new MqttFixedHeader(MqttMessageType.CONNECT,
 				false, MqttQoS.AT_MOST_ONCE, false, 0);
@@ -66,16 +67,16 @@ public class DefaultApiService implements ApiService{
 		
 		MqttConnectPayload payload=new MqttConnectPayload(deviceId, null, null, username, password.getBytes());
 		MqttConnectMessage connectMessage=new MqttConnectMessage(mqttFixedHeader, variableHeader, payload);
-		channel.writeAndFlush(connectMessage);
+		return channel.writeAndFlush(connectMessage);
 	}
 
 	@Override
-	public void subscribe(String topname, MqttQoS qoS) {
+	public ChannelFuture subscribe(String topname, MqttQoS qoS) {
 		
 		
 		if(!islogin()){
 			logger.info("未登录");
-			return;
+			return channel.newFailedFuture(new RuntimeException("未登录"));
 		}
 		
 		List<MqttTopicSubscription> topicSubscriptions=new ArrayList<>();
@@ -90,15 +91,17 @@ public class DefaultApiService implements ApiService{
 		MqttSubscribePayload payload=new MqttSubscribePayload(topicSubscriptions);
 		MqttSubscribeMessage mqttSubscribeMessage=new MqttSubscribeMessage(mqttFixedHeader, variableHeader, payload);
 		
-		getChannel().writeAndFlush(mqttSubscribeMessage);
+		return getChannel().writeAndFlush(mqttSubscribeMessage);
 	}
 
 	@Override
-	public void unsub(String topname) {
+	public ChannelFuture unsub(String topname) {
+
 		if(!islogin()){
 			logger.info("未登录");
-			return;
+			return channel.newFailedFuture(new RuntimeException("未登录"));
 		}
+		
 		
 		List<String> topicSubscriptions=new ArrayList<>();
 		topicSubscriptions.add(topname);
@@ -111,16 +114,17 @@ public class DefaultApiService implements ApiService{
 				MqttMessageIdVariableHeader.from(Math.abs(Integer.valueOf(topname.hashCode()).shortValue()));
 		MqttUnsubscribePayload payload=new MqttUnsubscribePayload(topicSubscriptions);
 		MqttUnsubscribeMessage mqttSubscribeMessage=new MqttUnsubscribeMessage(mqttFixedHeader, variableHeader, payload);
-		getChannel().writeAndFlush(mqttSubscribeMessage);
+		return getChannel().writeAndFlush(mqttSubscribeMessage);
 	}
 
 	@Override
-	public void pubMsg(String topname, byte[] bs, MqttQoS qoS) {
+	public ChannelFuture pubMsg(String topname, byte[] bs, MqttQoS qoS) {
 		
 		if(!islogin()){
 			logger.info("未登录");
-			return;
+			return channel.newFailedFuture(new RuntimeException("未登录"));
 		}
+		
 			
 		ByteBuf byteBuf=Unpooled.wrappedBuffer(bs);
 		
@@ -133,7 +137,7 @@ public class DefaultApiService implements ApiService{
  		
  		MqttPublishMessage mqttPublishMessage=
  				new MqttPublishMessage(mqttFixedHeader, variableHeader, byteBuf);
- 		getChannel().writeAndFlush(mqttPublishMessage);
+ 		return getChannel().writeAndFlush(mqttPublishMessage);
 	}
 
 	public Channel getChannel() {

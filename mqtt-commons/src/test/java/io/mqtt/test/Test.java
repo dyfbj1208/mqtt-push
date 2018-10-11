@@ -2,9 +2,9 @@ package io.mqtt.test;
 import java.util.Properties;
 import java.util.Scanner;
 
-import io.mqttpush.mqttserver.mqttclient.conn.Connetor;
-import io.mqttpush.mqttserver.mqttclient.service.DefaultApiService;
-import io.mqttpush.mqttserver.mqttclient.service.DefaultMessageListener;
+import io.mqttpush.mqttclient.conn.Connetor;
+import io.mqttpush.mqttclient.service.DefaultApiService;
+import io.mqttpush.mqttclient.service.DefaultMessageListener;
 import io.netty.handler.codec.mqtt.MqttQoS;
 
 public class Test {

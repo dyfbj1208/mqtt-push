@@ -1,9 +1,9 @@
-package io.mqttpush.mqttserver.mqttclient.handle;
+package io.mqttpush.mqttclient.handle;
 
 import org.apache.log4j.Logger;
 
-import io.mqttpush.mqttserver.mqttclient.service.ApiService;
-import io.mqttpush.mqttserver.mqttclient.service.DefaultApiService;
+import io.mqttpush.mqttclient.service.ApiService;
+import io.mqttpush.mqttclient.service.DefaultApiService;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -35,7 +35,7 @@ public class ConnectionHandle extends ChannelInboundHandlerAdapter {
 		this.username = username;
 		this.password = password;
 		this.substop = substop;
-		this.apiService = (apiService == null) ? DefaultApiService.intanceof() : apiService;
+		this.apiService = (apiService == null) ? DefaultApiService.intance() : apiService;
 	}
 
 	@Override

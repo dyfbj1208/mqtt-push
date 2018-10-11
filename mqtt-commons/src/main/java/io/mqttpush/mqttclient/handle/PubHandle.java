@@ -1,6 +1,6 @@
-package io.mqttpush.mqttserver.mqttclient.handle;
+package io.mqttpush.mqttclient.handle;
 
-import io.mqttpush.mqttserver.mqttclient.service.MessageListener;
+import io.mqttpush.mqttclient.service.MessageListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
