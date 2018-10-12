@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import org.apache.log4j.Logger;
 
+import io.mqttpush.getway.GetWayConstantBean;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -11,13 +12,10 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import io.netty.util.AttributeKey;
 
 
 /**
@@ -27,26 +25,8 @@ import io.netty.util.AttributeKey;
  */
 public class AbWebSocketHandler extends ChannelInboundHandlerAdapter {
 
-	final EventLoopGroup group = new NioEventLoopGroup();
-
-	final Bootstrap bootstrap = new Bootstrap();
 	
-	final String mqttserver="localhost";
-	
-	final int mqttport=10000;
-
-
-	
-	/**
-	 * AB->BC 模型中用于指定后端bcchannnel
-	 */
-	public final AttributeKey<Channel>  bcChannelAttr=AttributeKey.valueOf("bcChannel");
-	
-	/**
-	 * AB->BC 模型中用于指定后端abchannnel
-	 */
-	public final AttributeKey<Channel>  abChannelAttr=AttributeKey.valueOf("abChannel");
-
+	GetWayConstantBean constantBean=GetWayConstantBean.instance();
 	
 	
 	Logger logger=Logger.getLogger(getClass());
@@ -61,8 +41,9 @@ public class AbWebSocketHandler extends ChannelInboundHandlerAdapter {
 	 */
 	public void initBcChannel() {
 
-		Bootstrap bootstrap = this.bootstrap;
-		bootstrap.group(group).
+		
+		Bootstrap bootstrap = constantBean.bootstrap;
+		bootstrap.group(constantBean.group).
 		channel(NioSocketChannel.class).
 		option(ChannelOption.TCP_NODELAY, true).handler(new ChannelInitializer<SocketChannel>() {
 			@Override
@@ -88,12 +69,13 @@ public class AbWebSocketHandler extends ChannelInboundHandlerAdapter {
 		/**
 		 * 连接后端MQTT 服务器，绑定 前后连接
 		 */
-		ChannelFuture channelFuture=bootstrap.connect(mqttserver, mqttport);
+		ChannelFuture channelFuture=constantBean.bootstrap.connect(
+				constantBean.mqttserver,constantBean.mqttport);
 		Channel abchannel=ctx.channel();
 		Channel bcChannel=channelFuture.channel();
 	
-		abchannel.attr(bcChannelAttr).set(bcChannel);
-		bcChannel.attr(abChannelAttr).set(abchannel);
+		abchannel.attr(constantBean.bcChannelAttr).set(bcChannel);
+		bcChannel.attr(constantBean.abChannelAttr).set(abchannel);
 	
 		if(logger.isDebugEnabled()) {			
 			logger.debug("绑定成功AB-BC模型成功");
@@ -168,8 +150,8 @@ public class AbWebSocketHandler extends ChannelInboundHandlerAdapter {
 		if(abChannel==null) {
 			return null;
 		}
-		if(abChannel.hasAttr(bcChannelAttr)) {
-			bcChannel=abChannel.attr(bcChannelAttr).get();
+		if(abChannel.hasAttr(constantBean.bcChannelAttr)) {
+			bcChannel=abChannel.attr(constantBean.bcChannelAttr).get();
 		}
 		
 		return bcChannel;
@@ -189,8 +171,8 @@ public class AbWebSocketHandler extends ChannelInboundHandlerAdapter {
 		if(bcChannel==null) {
 			return null;
 		}
-		if(bcChannel.hasAttr(abChannelAttr)) {
-			abChannel=bcChannel.attr(abChannelAttr).get();
+		if(bcChannel.hasAttr(constantBean.abChannelAttr)) {
+			abChannel=bcChannel.attr(constantBean.abChannelAttr).get();
 		}
 		
 		return abChannel;

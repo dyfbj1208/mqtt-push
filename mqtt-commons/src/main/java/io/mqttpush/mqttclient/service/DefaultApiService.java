@@ -40,6 +40,8 @@ public class DefaultApiService implements ApiService{
 	
 	static DefaultApiService defaultApiService;
 	
+	final AttributeKey<Boolean> loginKey = AttributeKey.valueOf("login");
+	
 	public DefaultApiService() {
 		
 	}
@@ -155,7 +157,6 @@ public class DefaultApiService implements ApiService{
 	boolean islogin(){
 		
 		Channel channel=getChannel();
-		AttributeKey<Boolean> loginKey = AttributeKey.valueOf("login");
 		return channel.hasAttr(loginKey)&&channel.attr(loginKey).get();
 		
 	}

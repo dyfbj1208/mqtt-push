@@ -43,9 +43,7 @@ public class ConstantBean {
 	 */
 	public static final String  adminSendTopic="/root/admin/send";
 	
-	/**
-	 *点对点通信
-	 */
+	
 	public static final String ONE2ONE_CHAT_PREFIX="/root/chat/one2one/";
 	
 }

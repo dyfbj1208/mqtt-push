@@ -47,7 +47,7 @@ public class ConnectionHandle extends ChannelInboundHandlerAdapter {
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 
-		if (msg instanceof MqttMessage) {
+		if (msg instanceof MqttConnAckMessage) {
 
 			MqttMessage message = (MqttMessage) msg;
 			MqttFixedHeader fixedHeader = message.fixedHeader();
