@@ -11,9 +11,20 @@ import io.netty.util.AttributeKey;
 
 public class GetWayConstantBean {
 
-	public final EventLoopGroup group = new NioEventLoopGroup();
+	public final EventLoopGroup wsgroup = new NioEventLoopGroup();
 
-	public final Bootstrap bootstrap = new Bootstrap();
+	public final EventLoopGroup httpgroup = new NioEventLoopGroup();
+	
+	public final EventLoopGroup httpCallbackgroup = new NioEventLoopGroup();
+
+	public final Bootstrap wsbootstrap = new Bootstrap();
+	
+	public final Bootstrap httpbootstrap = new Bootstrap();
+	
+	public  final  Bootstrap  httpCallbackStart=new Bootstrap(); 
+	
+	
+	
 	
 	public final String mqttserver="localhost";
 	

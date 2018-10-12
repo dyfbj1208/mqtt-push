@@ -16,6 +16,8 @@ public class ControllBeans {
 	
 	public static AttributeKey<Boolean> loginKey = AttributeKey.valueOf("login");
 	
+	public static AttributeKey<String> requestIdentifyKey = AttributeKey.valueOf("requestIdentify");
+	
 	
 	public static BlockingQueue<MqttPublishMessage> mqttPublishMessages=new LinkedBlockingQueue<>(1024);
 	

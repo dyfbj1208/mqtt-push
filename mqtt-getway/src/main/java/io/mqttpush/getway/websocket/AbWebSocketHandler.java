@@ -1,6 +1,7 @@
 package io.mqttpush.getway.websocket;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
 
@@ -31,8 +32,22 @@ public class AbWebSocketHandler extends ChannelInboundHandlerAdapter {
 	
 	Logger logger=Logger.getLogger(getClass());
 	
+	/**
+	 * 标志是否初始化了channnel
+	 */
+	static AtomicBoolean isInit=new AtomicBoolean(false);
+	
+	
 	public AbWebSocketHandler() {
-		initBcChannel();
+		
+		if(!isInit.get()) {
+			
+			if(isInit.compareAndSet(false, true)) {
+				initBcChannel();
+			}
+			
+		}
+		
 	}
 	
 	
@@ -42,8 +57,8 @@ public class AbWebSocketHandler extends ChannelInboundHandlerAdapter {
 	public void initBcChannel() {
 
 		
-		Bootstrap bootstrap = constantBean.bootstrap;
-		bootstrap.group(constantBean.group).
+		Bootstrap bootstrap = constantBean.wsbootstrap;
+		bootstrap.group(constantBean.wsgroup).
 		channel(NioSocketChannel.class).
 		option(ChannelOption.TCP_NODELAY, true).handler(new ChannelInitializer<SocketChannel>() {
 			@Override
@@ -69,7 +84,7 @@ public class AbWebSocketHandler extends ChannelInboundHandlerAdapter {
 		/**
 		 * 连接后端MQTT 服务器，绑定 前后连接
 		 */
-		ChannelFuture channelFuture=constantBean.bootstrap.connect(
+		ChannelFuture channelFuture=constantBean.wsbootstrap.connect(
 				constantBean.mqttserver,constantBean.mqttport);
 		Channel abchannel=ctx.channel();
 		Channel bcChannel=channelFuture.channel();

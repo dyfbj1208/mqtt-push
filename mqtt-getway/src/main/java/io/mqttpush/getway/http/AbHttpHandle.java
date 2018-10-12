@@ -2,11 +2,11 @@ package io.mqttpush.getway.http;
 
 import org.apache.log4j.Logger;
 
+import io.mqttpush.getway.GetWayConstantBean;
 import io.mqttpush.getway.http.controller.ControllBeans;
 import io.mqttpush.getway.http.controller.Controller;
-import io.mqttpush.getway.http.controller.FormController;
-import io.mqttpush.getway.http.controller.FullTextController;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -35,6 +35,8 @@ public class AbHttpHandle extends ChannelInboundHandlerAdapter {
 	 
 	final  ControllBeans controllbean=ControllBeans.getInstance();
 	
+	final GetWayConstantBean constantBean = GetWayConstantBean.instance();
+	
 
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
@@ -45,6 +47,29 @@ public class AbHttpHandle extends ChannelInboundHandlerAdapter {
 		 ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
 		 cause.printStackTrace();
 	}
+
+	
+	
+	@Override
+	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+		super.channelInactive(ctx);
+		
+		Channel requestChannel=ctx.channel();
+		String closeIdentify=null;
+		if(requestChannel.hasAttr(ControllBeans.requestIdentifyKey)) {
+			closeIdentify=requestChannel.attr(ControllBeans.requestIdentifyKey).get();
+		}
+		if(closeIdentify!=null&&
+				constantBean.bcHttpChannels.containsKey(closeIdentify)) {
+			Channel bcChannel=constantBean.bcHttpChannels.get(closeIdentify);
+			if(bcChannel.isActive()) {
+				bcChannel.flush();
+			}
+		}
+		
+	}
+
+
 
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -62,7 +87,7 @@ public class AbHttpHandle extends ChannelInboundHandlerAdapter {
 	            response.headers().setInt(CONTENT_LENGTH, response.content().readableBytes());
 	            
 	            
-	            applyController(request, response);
+	            applyController(ctx.channel(),request, response);
 	            
 	            
 	            if (!keepAlive) {
@@ -82,7 +107,7 @@ public class AbHttpHandle extends ChannelInboundHandlerAdapter {
 	 * @param req
 	 * @param response
 	 */
-	public void applyController(HttpRequest request,HttpResponse response) {
+	public void applyController(Channel channel,HttpRequest request,HttpResponse response) {
 		
 		if(request==null) {
 			return;
@@ -97,7 +122,7 @@ public class AbHttpHandle extends ChannelInboundHandlerAdapter {
 			controller=controllbean.fullTextController();
 		}
 		
-		controller.service(request,response);
+		controller.service(channel,request,response);
 	}
 
 	@Override

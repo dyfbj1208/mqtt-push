@@ -38,6 +38,9 @@ public class ChannelUserService {
 	public void loginout(Channel channel) {
 	
 		String deviceId = deviceId(channel);
+			if(deviceId==null) {
+				return;
+			}
 			
 			synchronized (deviceId) {
 				
@@ -136,8 +139,7 @@ public class ChannelUserService {
 	 */
 	public boolean isLogin(Channel channel) {
 
-		AttributeKey<Boolean> loginKey = AttributeKey.valueOf("login");
-		return channel != null && channel.hasAttr(loginKey);
+		return channel != null && channel.hasAttr(ConstantBean.loginKey);
 	}
 
 	/**
@@ -149,8 +151,8 @@ public class ChannelUserService {
 	public String deviceId(Channel channel) {
 
 		if (isLogin(channel)) {
-			AttributeKey<String> deviceKey = AttributeKey.valueOf("deviceId");
-			return channel.attr(deviceKey).get();
+
+			return channel.attr(ConstantBean.deviceKey).get();
 		}
 
 		return null;
