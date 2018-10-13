@@ -10,6 +10,9 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.nio.AbstractNioByteChannel;
+import io.netty.channel.nio.AbstractNioChannel;
+import io.netty.channel.nio.AbstractNioMessageChannel;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpRequest;
@@ -31,7 +34,7 @@ public class AbHttpHandle extends ChannelInboundHandlerAdapter {
 	private static final AsciiString KEEP_ALIVE = AsciiString.cached("keep-alive");
 	
 	
-	final String FORM_URL_ENCODING="application/x-www-form-urlencoded";
+	final String JSON_CONTENT_TYPE="application/json";
 	 
 	final  ControllBeans controllbean=ControllBeans.getInstance();
 	
@@ -66,7 +69,9 @@ public class AbHttpHandle extends ChannelInboundHandlerAdapter {
 				bcChannel.flush();
 			}
 		}
-		
+		if(logger.isDebugEnabled()) {
+			logger.debug(ctx.channel()+"channelInactive");
+		}
 	}
 
 
@@ -104,6 +109,7 @@ public class AbHttpHandle extends ChannelInboundHandlerAdapter {
 	
 	/**
 	 * 根据请求头决定应有的controller
+	 *只支持JSON 文本请求 和mutilform 二进制请求
 	 * @param req
 	 * @param response
 	 */
@@ -116,11 +122,16 @@ public class AbHttpHandle extends ChannelInboundHandlerAdapter {
 		String contentType=request.headers().get(CONTENT_TYPE);
 		Controller controller=null;
 		
-		if(contentType!=null&&contentType.equalsIgnoreCase(FORM_URL_ENCODING)) {			
-			controller=controllbean.formController();
-		}else {			
-			controller=controllbean.fullTextController();
+		if(contentType!=null) {
+			if(contentType.equalsIgnoreCase(JSON_CONTENT_TYPE)) {				
+				controller=controllbean.fullTextController();
+			}
 		}
+		
+		if(controller==null) {
+			controller=controllbean.formController();
+		}
+		
 		
 		controller.service(channel,request,response);
 	}

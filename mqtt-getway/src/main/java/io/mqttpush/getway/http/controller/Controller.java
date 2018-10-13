@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.mqttpush.getway.GetWayConstantBean;
 import io.mqttpush.getway.http.BcMqttHandle;
+import io.mqttpush.getway.http.vo.HttpPushVo;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -21,8 +22,11 @@ import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttVersion;
+import io.netty.util.concurrent.GenericFutureListener;
 
 /**
  * 抽象的controller
@@ -39,6 +43,7 @@ public abstract class Controller {
 
 	final GetWayConstantBean constantBean = GetWayConstantBean.instance();
 
+	
 	/**
 	 * 服务于请求
 	 * 
@@ -48,6 +53,39 @@ public abstract class Controller {
 	 */
 	public abstract void service(Channel requestChannel, HttpRequest request, HttpResponse response);
 
+	
+	
+	/**
+	 * 把报文路由给MQTT 服务
+	 * @param requestChannel
+	 * @param httpPushVo
+	 */
+	protected void routeData(Channel requestChannel,HttpPushVo httpPushVo) {
+		
+		Channel channel = getAndSetChannelByIdentify(httpPushVo.getFromIdentify());
+
+		if (channel != null) {
+
+			channel.attr(constantBean.bcHttpCallBackAttr).set(httpPushVo.getCallback());
+
+			MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, false, MqttQoS.AT_LEAST_ONCE,
+					false, 0);
+
+			MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(
+					constantBean.ONE2ONE_CHAT_PREFIX + httpPushVo.getToIdentify(), httpPushVo.hashCode());
+
+			MqttPublishMessage mqttPublishMessage = new MqttPublishMessage(mqttFixedHeader, variableHeader,
+					httpPushVo.getByteContent());
+
+			if (channel.hasAttr(ControllBeans.loginKey) && channel.attr(ControllBeans.loginKey).get()) {
+				channel.writeAndFlush(mqttPublishMessage);
+				requestChannel.attr(ControllBeans.requestIdentifyKey).set(httpPushVo.getFromIdentify());
+			} else {
+				ControllBeans.mqttPublishMessages.offer(mqttPublishMessage);
+			}
+
+		}
+	}
 	/**
 	 * 得到设置好了的channel，否则连接并且设置它
 	 * 
@@ -55,7 +93,7 @@ public abstract class Controller {
 	 * @param callback
 	 * @return
 	 */
-	protected Channel getAndSetChannelByIdentify(String identify, String callback) {
+	protected Channel getAndSetChannelByIdentify(String identify) {
 
 		Map<String, Channel> bcHttpChannels = constantBean.bcHttpChannels;
 
@@ -74,14 +112,20 @@ public abstract class Controller {
 			ChannelFuture channelFuture = constantBean.httpbootstrap.connect(constantBean.mqttserver,
 					constantBean.mqttport);
 
-			channelFuture.channel().attr(constantBean.bcHttpCallBackAttr).set(callback);
-
 			Channel oldChannel = bcHttpChannels.put(identify, channel = channelFuture.channel());
 
 			if (oldChannel != null) {
 				oldChannel.close();
 			}
-			loginMqtt(channel, identify, "user", "user123456");
+			
+			channelFuture.addListener(new GenericFutureListener<ChannelFuture>() {
+				@Override
+				public void operationComplete(ChannelFuture future) throws Exception {
+					loginMqtt(future.channel(), identify, "user", "user123456");
+				}
+				
+			});
+			
 
 		}
 

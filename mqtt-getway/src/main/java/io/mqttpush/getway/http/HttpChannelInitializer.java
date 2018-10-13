@@ -27,7 +27,7 @@ public class HttpChannelInitializer extends ChannelInitializer<SocketChannel>{
         
         pipeline.addLast(new LoggingHandler(LogLevel.DEBUG));
         
-        pipeline.addLast("myWebSocketHandler", new AbHttpHandle());
+        pipeline.addLast("myHttpHandler", new AbHttpHandle());
 
     }
 }

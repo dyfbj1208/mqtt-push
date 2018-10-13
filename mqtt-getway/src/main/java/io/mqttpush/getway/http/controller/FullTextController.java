@@ -26,67 +26,29 @@ import io.netty.handler.codec.mqtt.MqttQoS;
  */
 public class FullTextController extends Controller {
 
-
-
-	final GetWayConstantBean constantBean = GetWayConstantBean.instance();
-
 	protected FullTextController() {
 		initBcChannel();
 	}
 
 	@Override
-	public void service(Channel requestChannel,HttpRequest request, HttpResponse response) {
+	public void service(Channel requestChannel, HttpRequest request, HttpResponse response) {
 
 		if (!(request instanceof FullHttpRequest)) {
 			response.setStatus(HttpResponseStatus.BAD_REQUEST);
 			return;
 		}
-		
+
 		FullHttpRequest fullHttpRequest = (FullHttpRequest) request;
 
 		ByteBuf byteBuf = fullHttpRequest.content();
 
 		byte[] bs = new byte[byteBuf.readableBytes()];
 		byteBuf.readBytes(bs);
-		
+
 		HttpPushVo httpPushVo = JSON.parseObject(new String(bs), HttpPushVo.class);
-	
-		
-		Channel channel=getAndSetChannelByIdentify(httpPushVo.getFromIdentify(), httpPushVo.getCallback());
-		
-		if(channel!=null) {
-			
-			
-			MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, false, MqttQoS.AT_LEAST_ONCE,
-					false, 0);
 
-			MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(
-					constantBean.ONE2ONE_CHAT_PREFIX+httpPushVo.getToIdentify(),
-					httpPushVo.hashCode());
-
-			byteBuf=channel.alloc().buffer();
-			byteBuf.writeCharSequence(httpPushVo.getContent(), Charset.forName("utf-8"));
-			MqttPublishMessage mqttPublishMessage = new MqttPublishMessage(mqttFixedHeader, variableHeader, byteBuf);
-		
-			
-			
-			if(channel.hasAttr(ControllBeans.loginKey)
-					&&channel.attr(ControllBeans.loginKey).get()) {
-				channel.writeAndFlush(mqttPublishMessage);
-				requestChannel.attr(ControllBeans.requestIdentifyKey).set(httpPushVo.getFromIdentify());
-			}else {
-				ControllBeans.mqttPublishMessages.offer(mqttPublishMessage);
-			}
-			
-		}
+		super.routeData(requestChannel, httpPushVo);
 
 	}
-
-	
-
-
-
-	
-	
 
 }
