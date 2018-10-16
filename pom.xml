@@ -1,35 +1,47 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>io.mqttpush</groupId>
-  <artifactId>mqtt-push</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  <packaging>pom</packaging>
-  <modules>
-  	<module>mqtt-server</module>
-  	<module>mqtt-getway</module>
-  	<module>mqtt-admin</module>
-  	<module>mqtt-commons</module>
-  </modules>
-  
-     <properties>    
- 	 <maven.compiler.source>1.8</maven.compiler.source>    
- 	 <maven.compiler.target>1.8</maven.compiler.target>    
-	 <maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion> 
-	 <netty-version>4.1.16.Final</netty-version>   
-	</properties> 
-	 
-  <dependencies>
-  
-  		<dependency>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>io.mqttpush</groupId>
+	<artifactId>mqtt-push</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
+	<modules>
+		<module>mqtt-server</module>
+		<module>mqtt-getway</module>
+		<module>mqtt-admin</module>
+		<module>mqtt-commons</module>
+	</modules>
+
+	<properties>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<maven.compiler.compilerVersion>1.8</maven.compiler.compilerVersion>
+		<netty-version>4.1.16.Final</netty-version>
+	</properties>
+
+	<dependencies>
+
+		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
 			<version>1.2.17</version>
 		</dependency>
-		
-  		<dependency>
+
+		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
 			<version>${netty-version}</version>
 		</dependency>
-  </dependencies>
+	</dependencies>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>io.mqttpush</groupId>
+				<artifactId>mqtt-commons</artifactId>
+				<version>${version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 </project>

@@ -26,9 +26,9 @@ public class GetWayConstantBean {
 	
 	
 	
-	public final String mqttserver="localhost";
+	public  String mqttserver;
 	
-	public final int mqttport=10000;
+	public  int mqttport;
 
 
 	/**
@@ -56,12 +56,26 @@ public class GetWayConstantBean {
 	
 	static GetWayConstantBean constantBean=null;
 	
-	private  GetWayConstantBean() {}
+
 	
-	public static GetWayConstantBean instance() {
+	
+	
+	private GetWayConstantBean(String mqttserver, int mqttport) {
+		super();
+		this.mqttserver = mqttserver;
+		this.mqttport = mqttport;
+	}
+	public static GetWayConstantBean instance(String mqttserver, int mqttport) {
 		
 		if(constantBean==null) {
-			constantBean=new GetWayConstantBean();
+			constantBean=new GetWayConstantBean(mqttserver,mqttport);
+		}
+		return  constantBean;
+	}
+		public static GetWayConstantBean instance() {
+		
+		if(constantBean==null) {
+			constantBean=new GetWayConstantBean("localhost",10000);
 		}
 		return  constantBean;
 	}

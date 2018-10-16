@@ -31,8 +31,36 @@
 		<dependency>
 			<groupId>io.mqttpush</groupId>
 			<artifactId>mqtt-commons</artifactId>
-			<version>${version}</version>
 		</dependency>
 
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-transport-native-epoll</artifactId>
+			<version>${netty-version}</version>
+		</dependency>
+
+
 	</dependencies>
+
+
+	<build>
+		<!-- <finalName>mqtt-pushserver</finalName> -->
+		<plugins>
+			<plugin>
+
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.4</version>
+				<configuration>
+					<archive>
+						<manifest>
+							<addClasspath>true</addClasspath>
+							<classpathPrefix>lib/</classpathPrefix>
+							<mainClass>io.mqttpush.mqttserver.BootServer</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 </project>
