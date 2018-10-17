@@ -1,7 +1,11 @@
 package io.mqttpush.mqttserver.handle;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.log4j.Logger;
 
+import io.mqttpush.mqttserver.beans.ConstantBean;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.mqtt.MqttMessage;
@@ -17,10 +21,30 @@ public abstract  class AbstractHandle extends ChannelInboundHandlerAdapter imple
 	
 	Logger logger = Logger.getLogger(getClass());
 
-	
+	int defaultwaittime=10;
 	
 	@Override
-	public void connec(ChannelHandlerContext context) {
+	public void channelActive(ChannelHandlerContext ctx) throws Exception {
+	
+		final Channel channel=ctx.channel();
+		
+		channel.eventLoop().schedule(()->{
+			/**
+			 * 如果channel 没有登录就关掉channel
+			 */
+			if(!channel.hasAttr(ConstantBean.loginKey)
+					||(!channel.attr(ConstantBean.loginKey).get())) {				
+				channel.close();
+				if(logger.isDebugEnabled()) {
+					logger.debug("关闭未登录的超时channel");
+				}
+			}
+		}, defaultwaittime, TimeUnit.SECONDS);
+	}
+
+
+	@Override
+	public void connec(ChannelHandlerContext context) { 
 		try {
 			super.channelActive(context);
 		} catch (Exception e) {
