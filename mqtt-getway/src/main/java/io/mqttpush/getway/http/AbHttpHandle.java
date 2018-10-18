@@ -15,6 +15,7 @@ import io.netty.channel.nio.AbstractNioChannel;
 import io.netty.channel.nio.AbstractNioMessageChannel;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -27,6 +28,8 @@ public class AbHttpHandle extends ChannelInboundHandlerAdapter {
 	Logger logger = Logger.getLogger(getClass());
 
 	private static final byte[] CONTENT = { 'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd' };
+	
+	private static final byte[] unSouppert="Unsouppert request Method".getBytes();
 
 	private static final AsciiString CONTENT_TYPE = AsciiString.cached("Content-Type");
 	private static final AsciiString CONTENT_LENGTH = AsciiString.cached("Content-Length");
@@ -82,12 +85,29 @@ public class AbHttpHandle extends ChannelInboundHandlerAdapter {
 		if (msg instanceof HttpRequest) {
 
 			HttpRequest request = (HttpRequest) msg;
+			
+			
 		
 	            boolean keepAlive = HttpUtil.isKeepAlive(request);
-	            FullHttpResponse response = new DefaultFullHttpResponse(
-	            		HttpVersion.HTTP_1_1, 
-	            		HttpResponseStatus.OK, Unpooled.wrappedBuffer(CONTENT));
+	            FullHttpResponse response =null;
 	            
+	            
+	            /**
+				 * 只允许post提交
+				 */
+				if(request.method()!=HttpMethod.POST) {
+					
+					response=new DefaultFullHttpResponse(
+		            		HttpVersion.HTTP_1_1, 
+		            		HttpResponseStatus.BAD_REQUEST, Unpooled.wrappedBuffer(unSouppert));
+					ctx.write(response).addListener(ChannelFutureListener.CLOSE);
+					
+					return;
+				}
+				
+				response=new DefaultFullHttpResponse(
+		            		HttpVersion.HTTP_1_1, 
+		            		HttpResponseStatus.OK, Unpooled.wrappedBuffer(CONTENT));
 	            response.headers().set(CONTENT_TYPE, "text/plain");
 	            response.headers().setInt(CONTENT_LENGTH, response.content().readableBytes());
 	            

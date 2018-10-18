@@ -109,6 +109,10 @@ public class PushServiceHandle extends AbstractHandle {
 		
 		SendableMsg sendableMsg = new SendableMsg(header.topicName(), channelUserService.deviceId(ctx.channel()),
 				messagepub.content());
+		/**
+		 * 添加消息的保留标志，一般来说，只有保留标志的消息才会被保存
+		 */
+		sendableMsg.setRetain(messagepub.fixedHeader().isRetain());
 		
 		ready2Send(sendableMsg,ctx.channel());
 

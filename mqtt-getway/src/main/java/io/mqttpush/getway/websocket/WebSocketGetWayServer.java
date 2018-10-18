@@ -11,7 +11,7 @@ public class WebSocketGetWayServer {
 
 	public static void main(String[] args) {
 
-		int port=9999;
+		int websocketport=9999;
 		String proxyhost="localhost";
 		int proxyport=10000;
 		
@@ -21,7 +21,7 @@ public class WebSocketGetWayServer {
 			if(args.length>0){
 				
 				try {
-					port=Integer.parseInt(args[0]);
+					websocketport=Integer.parseInt(args[0]);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -56,7 +56,8 @@ public class WebSocketGetWayServer {
 
 			ChannelFuture channelFuture;
 			try {
-				channelFuture = serverBootstrap.bind(port).sync();
+				channelFuture = serverBootstrap.bind(websocketport).sync();
+				System.out.println("websocker网关启动成功 " + channelFuture.channel().localAddress());
 				channelFuture.channel().closeFuture().sync();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
