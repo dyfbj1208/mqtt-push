@@ -1,6 +1,6 @@
 package io.mqttpush.mqttserver.util;
 
-import io.mqttpush.mqttserver.util.ChatMessage.MessageType;
+import io.mqttpush.mqttserver.util.AdminMessage.MessageType;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 
@@ -17,7 +17,7 @@ public class ByteBufEncodingUtil {
  * 下线报文的前缀
  * 暂存消息的前缀
 //	 */
-	public static final  char[] prefixchars= {'+','-','&'};
+	public static final  char[] prefixchars= {'+','-','&','*'};
 	
 	
 	private static ByteBufEncodingUtil packatUtil;
@@ -96,24 +96,48 @@ public class ByteBufEncodingUtil {
 		 return buf;
 	}
 	
+	/**
+	 * 构建一个保存消息对象
+	 * @param allocator
+	 * @param timestamp
+	 * @param deviceId
+	 * @param content
+	 * @return
+	 */
+	public ByteBuf saveMQByteBuf(ByteBufAllocator allocator,Long timestamp,String deviceId,byte[] content) {
+		
+		 ByteBuf buf=allocator.buffer();
+		 buf.writeByte(prefixchars[3]);
+		 buf.writeLong(timestamp);
+		 
+		 byte[] bs=deviceId.getBytes();
+		 buf.writeInt(bs.length);
+		 buf.writeBytes(bs);
+		 buf.writeBytes(content);
+		 
+		 return buf;
+	}
+	
 
 	/**
 	 * 解码
 	 * @param buf
 	 * @return
 	 */
-	public ChatMessage  dencoding(ByteBuf buf) {
+	public AdminMessage  dencoding(ByteBuf buf) {
 		
 		int type=buf.readByte();
 	
 		
-		ChatMessage adminMessage=null;
+		AdminMessage adminMessage=null;
+		long  timestamp=0;
+		String deviceId=null;
 		byte [] bs=null;
 		switch(type) {
 			case  '+':
 				bs =new byte[buf.readableBytes()];
 				buf.readBytes(bs);
-				adminMessage=new ChatMessage(MessageType.ONLINE, new String(bs));
+				adminMessage=new AdminMessage(MessageType.ONLINE, new String(bs));
 				break;
 			case  '-':
 				bs =new byte[buf.readInt()];
@@ -127,16 +151,33 @@ public class ByteBufEncodingUtil {
 				break;
 			case '&':
 				
-				long  timestamp=buf.readLong();
+				timestamp=buf.readLong();
 	
 				bs=new byte[buf.readInt()];
 				buf.readBytes(bs);
-				String deviceId=new String(bs);
+				deviceId=new String(bs);
 				
 				bs=new byte[buf.readableBytes()];
 				buf.readBytes(bs);
 				adminMessage=new StashMessage(MessageType.STASH, deviceId, timestamp, bs);
 				break;
+			case '*':
+				
+				/**
+				 * 保存消息解码
+				 */
+				timestamp=buf.readLong();
+				
+				bs=new byte[buf.readInt()];
+				buf.readBytes(bs);
+				deviceId=new String(bs);
+				
+				bs=new byte[buf.readableBytes()];
+				buf.readBytes(bs);
+				adminMessage=new StashMessage(MessageType.SAVEMSG, deviceId, timestamp, bs);
+				break;
+				
+				
 		}
 		
 		return  adminMessage;

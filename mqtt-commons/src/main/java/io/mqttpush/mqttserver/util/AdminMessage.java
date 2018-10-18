@@ -5,7 +5,7 @@ package io.mqttpush.mqttserver.util;
  * @author tianzhenjiu
  *
  */
-public class ChatMessage {
+public class AdminMessage {
 
 	MessageType type;
 	String deviceId;
@@ -17,11 +17,11 @@ public class ChatMessage {
 	 *
 	 */
 	public static enum MessageType{
-		ONLINE,OFFLINE,STASH
+		ONLINE,OFFLINE,STASH,SAVEMSG
 	}
 	
 	
-	public ChatMessage(MessageType type, String deviceId) {
+	public AdminMessage(MessageType type, String deviceId) {
 		super();
 		this.type = type;
 		this.deviceId = deviceId;

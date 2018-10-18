@@ -1,6 +1,6 @@
 package io.mqttpush.mqttserver.util;
 
-public class OfflineMessage extends ChatMessage{
+public class OfflineMessage extends AdminMessage{
 
 	String lastChatDeviceId;
 	

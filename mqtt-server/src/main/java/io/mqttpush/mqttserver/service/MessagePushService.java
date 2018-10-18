@@ -9,8 +9,8 @@ import io.mqttpush.mqttserver.beans.SendableMsg;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
 import io.mqttpush.mqttserver.exception.SendException;
 import io.mqttpush.mqttserver.exception.SendException.SendError;
+import io.mqttpush.mqttserver.util.AdminMessage.MessageType;
 import io.mqttpush.mqttserver.util.ByteBufEncodingUtil;
-import io.mqttpush.mqttserver.util.ChatMessage.MessageType;
 import io.mqttpush.mqttserver.util.StashMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -114,6 +114,11 @@ public class MessagePushService {
 									sendableMsg.getContent()), SendError.CHANNEL_OFF);
 						}
 
+					}else {
+											
+						send2Admin( ByteBufEncodingUtil.getInatance()
+								.saveMQByteBuf(ByteBufAllocator.DEFAULT, System.currentTimeMillis(),
+										deviceId, sendableMsg.getContent()));
 					}
 				}
 
