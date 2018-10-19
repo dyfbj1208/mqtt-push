@@ -108,12 +108,12 @@ public class AbHttpHandle extends ChannelInboundHandlerAdapter {
 				response=new DefaultFullHttpResponse(
 		            		HttpVersion.HTTP_1_1, 
 		            		HttpResponseStatus.OK, Unpooled.wrappedBuffer(CONTENT));
-	            response.headers().set(CONTENT_TYPE, "text/plain");
-	            response.headers().setInt(CONTENT_LENGTH, response.content().readableBytes());
+	        
 	            
 	            
 	            applyController(ctx.channel(),request, response);
-	            
+	            response.headers().set(CONTENT_TYPE, "text/plain");
+	            response.headers().setInt(CONTENT_LENGTH, response.content().readableBytes());
 	            
 	            if (!keepAlive) {
 	                ctx.write(response).addListener(ChannelFutureListener.CLOSE);

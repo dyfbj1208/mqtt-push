@@ -25,10 +25,12 @@ public class Iden2PingHandle extends ReadTimeoutHandler{
 	@Override
 	protected void readTimedOut(ChannelHandlerContext ctx) throws Exception {
 		
-		logger.info("发送心跳");
 		ctx.writeAndFlush(
 				new MqttMessage(new MqttFixedHeader(MqttMessageType.PINGREQ,
 						false, MqttQoS.AT_MOST_ONCE, false, 0)));
+		if(logger.isDebugEnabled()) {
+			logger.debug("发送心跳");
+		}
 	}
 	
 	
