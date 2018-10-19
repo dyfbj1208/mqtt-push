@@ -114,7 +114,7 @@ public class MessagePushService {
 									sendableMsg.getContent()), SendError.CHANNEL_OFF);
 						}
 
-					}else {
+					}else if(sendableMsg.isRetain()){
 											
 						send2Admin( ByteBufEncodingUtil.getInatance()
 								.saveMQByteBuf(ByteBufAllocator.DEFAULT, System.currentTimeMillis(),
