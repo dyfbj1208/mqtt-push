@@ -1,5 +1,7 @@
 package io.mqttpush.mqttclient.handle;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.log4j.Logger;
 
 import io.mqttpush.mqttclient.service.ApiService;
@@ -28,9 +30,11 @@ public class ConnectionHandle extends ChannelInboundHandlerAdapter {
 	String deviceId;
 	ApiService apiService;
 	String substop;
+	AtomicBoolean isValidate;
 
-	public ConnectionHandle(ApiService apiService, String deviceId, String username, String password, String substop) {
+	public ConnectionHandle(AtomicBoolean isValidate,ApiService apiService, String deviceId, String username, String password, String substop) {
 		super();
+		this.isValidate=isValidate;
 		this.deviceId = deviceId;
 		this.username = username;
 		this.password = password;
@@ -61,6 +65,9 @@ public class ConnectionHandle extends ChannelInboundHandlerAdapter {
 			switch (messageType) {
 			case CONNACK:
 				ack(ctx, (MqttConnAckMessage) message);
+				break;
+			case PINGRESP:
+				isValidate.compareAndSet(false, true);
 				break;
 			case DISCONNECT:
 				ctx.close();
