@@ -16,9 +16,7 @@ public class SendableMsg extends MsgRep{
 	private static final long serialVersionUID = -1043599050141437505L;
 	 
 
-	 
-	 
-	 
+
 	 /**
 	  * 保留标识
 	  */
@@ -30,6 +28,8 @@ public class SendableMsg extends MsgRep{
 	 int  dupTimes;
 	 
 	 
+	 
+	
 
 	public SendableMsg(String topname, String sendclientid, ByteBuf msgContent) {
 		super(topname,sendclientid,msgContent);
@@ -58,6 +58,4 @@ public class SendableMsg extends MsgRep{
 	public void setDupTimes(int dupTimes) {
 		this.dupTimes = dupTimes;
 	}
-
-	
 }

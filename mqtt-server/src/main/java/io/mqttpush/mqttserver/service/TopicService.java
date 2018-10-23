@@ -1,23 +1,19 @@
 package io.mqttpush.mqttserver.service;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
-
-import org.apache.log4j.Logger;
-
 import io.mqttpush.mqttserver.beans.ConstantBean;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
-import io.mqttpush.mqttserver.util.CasCadeMap;
-import io.mqttpush.mqttserver.util.StringCasCadeKey;
 import io.netty.channel.Channel;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelMatchers;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
-import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.UnorderedThreadPoolEventExecutor;
+import org.apache.log4j.Logger;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 
 /**
  * 维护订阅相主题关的信息的service
@@ -31,7 +27,9 @@ public class TopicService {
 	/**
 	 * 通道订阅
 	 */
-	CasCadeMap<String, String> many2ManytopChannels = new CasCadeMap<String, String>();
+	//CasCadeMap<String, String> many2ManytopChannels = new CasCadeMap<String, String>();
+	
+	final  Map<String,Map<String,MqttQoS>> devSubTopics;
 
 
 	ChannelUserService channelUserService;
@@ -46,19 +44,18 @@ public class TopicService {
 	public TopicService() {
 
 		channelUserService = ServiceBeans.getInstance().getChannelUserService();
-		initTopc();
+
 		mapChannelGroup = new ConcurrentHashMap<>();
-
 		ChannelGroup adminChannelGroup = new DefaultChannelGroup(new UnorderedThreadPoolEventExecutor(4));
-
 		mapChannelGroup.putIfAbsent(ConstantBean.adminRecivTopic, adminChannelGroup);
+		devSubTopics=new ConcurrentHashMap<>();
+		initTopc();
 	}
 
 	/**
 	 * 处理订阅
-	 * 
 	 * @param deviceId
-	 * @param topName
+	 * @param topicname
 	 * @param mqttQoS
 	 */
 	public void subscribe(String deviceId, String topicname, MqttQoS mqttQoS) {
@@ -73,9 +70,8 @@ public class TopicService {
 
 	/**
 	 * 处理订阅
-	 * 
-	 * @param deviceId
-	 * @param topName
+	 * @param channel
+	 * @param topicname
 	 * @param mqttQoS
 	 */
 	public void subscribe(Channel channel, String topicname, MqttQoS mqttQoS) {
@@ -86,15 +82,24 @@ public class TopicService {
 
 		String deviceId = channelUserService.deviceId(channel);
 
-		if (deviceId != null) {
+		if (deviceId == null) {
 
-			AttributeKey<MqttQoS> attributeKey = AttributeKey.valueOf(topicname);
-			channel.attr(attributeKey).set(mqttQoS);
-			PName pname = calPanem(topicname);
-			if (pname != null) {
-				many2ManytopChannels.putCasCade(pname.cname, pname.pname, deviceId);
-			}
+			logger.warn("订阅失败，怎么会出现为空的设备号?");
+			return;
 		}
+
+
+		if(!devSubTopics.containsKey(topicname)){
+
+			logger.warn("订阅失败，订阅了无效的主题");
+			return;
+		}
+
+		/**
+		 * 把当前设备号和订阅的服务质量放入这个 主题下的map
+		 * 方便根据主题查找设备以及服务质量
+		 */
+		devSubTopics.get(topicname).putIfAbsent(deviceId,mqttQoS);
 
 		if (mapChannelGroup.containsKey(topicname)) {
 			ChannelGroup channelGroup = null;
@@ -113,39 +118,30 @@ public class TopicService {
 	public void unscribe(String deviceId, String topName) {
 
 		Channel channel = channelUserService.channel(deviceId);
-		if (channel != null && channel.isActive()) {
-			many2ManytopChannels.removeCasCade(topName, deviceId);
+		if (channel == null || (!channel.isActive())) {
+
+			logger.warn("取消订阅失败，取消订阅的时候 必须channnel在线");
+			return;
 		}
 	}
 
+	/**
+	 * 初始化三个订阅用的主题
+	 */
 	public void initTopc() {
 
-		StringCasCadeKey rootKey = new StringCasCadeKey("/root");
-		StringCasCadeKey chatKey = new StringCasCadeKey("/chat", rootKey);
+		Map<String,MqttQoS> topicsA=new ConcurrentHashMap<>();
 
-		StringCasCadeKey one2onekey = new StringCasCadeKey(ConstantBean.ONE2ONE_CHAT_PREFIX);
+		Map<String,MqttQoS> topicsB=new ConcurrentHashMap<>();
 
-		many2ManytopChannels.putCasCade(rootKey, null);
-		many2ManytopChannels.putCasCade(chatKey, null);
-		many2ManytopChannels.putCasCade(one2onekey, null);
+		Map<String,MqttQoS> topicsC=new ConcurrentHashMap<>();
+
+		devSubTopics.putIfAbsent("/root/topicA",topicsA);
+		devSubTopics.putIfAbsent("/root/topicB",topicsB);
+		devSubTopics.putIfAbsent("/root/topicC",topicsC);
 
 	}
 
-	public PName calPanem(String topName) {
-
-		StringBuilder builder = new StringBuilder(topName);
-		int lastindex = builder.length() - 1;
-
-		if (builder.charAt(lastindex) == '/')
-			builder.deleteCharAt(lastindex);
-
-		int findex = builder.lastIndexOf("/");
-		if (findex > 0) {
-			return new PName(builder.substring(0, findex), builder.substring(findex + 1));
-		}
-
-		return new PName(null, builder.toString());
-	}
 
 	/**
 	 * 根据主题执行 action
@@ -153,15 +149,19 @@ public class TopicService {
 	 * @param topicName
 	 * @param action
 	 */
-	public void channelsSend(String topicName, Consumer<String> action) {
-		many2ManytopChannels.get(topicName, action);
+	public void channelsSend(String topicName, BiConsumer<String,MqttQoS> action) {
+		if(!devSubTopics.containsKey(topicName)){
+			logger.warn("发送失败，主题不存在");
+			return;
+		}
+
+		devSubTopics.get(topicName).forEach(action);
 	}
 
 	/**
-	 * channnel 组发 直接发送了，不会管失败的情况
-	 * 
+	 * 组发
 	 * @param topicName
-	 * @param sendableMsg
+	 * @param publishMessage
 	 */
 	public void channelsForGroup(String topicName, MqttPublishMessage publishMessage) {
 
@@ -170,29 +170,4 @@ public class TopicService {
 		}
 	}
 
-	public static void main(String[] args) {
-
-		TopicService topicService = new TopicService();
-
-		System.out.println(topicService.calPanem("/acccc/a/c/a"));
-
-	}
-
-	public static class PName {
-
-		String pname;
-		String cname;
-
-		public PName(String pname, String cname) {
-			super();
-			this.pname = pname;
-			this.cname = cname;
-		}
-
-		@Override
-		public String toString() {
-			return "PName [pname=" + pname + ", cname=" + cname + "]";
-		}
-
-	}
 }

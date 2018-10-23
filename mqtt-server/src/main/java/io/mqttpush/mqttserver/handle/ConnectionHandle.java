@@ -148,7 +148,7 @@ public class ConnectionHandle extends AbstractHandle {
 			SendableMsg sendableMsg=null;
 			Attribute<SendableMsg> attribute=channel.attr(ConstantBean.LASTSENT_KEY);
 			if(attribute!=null&&(sendableMsg=attribute.get())!=null) {
-				messagePushService.sendMsgForChannel(sendableMsg,channel);
+				messagePushService.sendMsgForChannel(sendableMsg,channel,MqttQoS.EXACTLY_ONCE);
 			}
 		}
 	}

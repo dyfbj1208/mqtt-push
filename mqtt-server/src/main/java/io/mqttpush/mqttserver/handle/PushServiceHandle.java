@@ -140,7 +140,7 @@ public class PushServiceHandle extends AbstractHandle {
 				String deviceId=topicname.substring(ConstantBean.ONE2ONE_CHAT_PREFIX.length());
 				Channel toChannel=channelUserService.channel(deviceId);
 				if(toChannel!=null) {
-					messagePushService.sendMsgForChannel(sendableMsg, toChannel);
+					messagePushService.sendMsgForChannel(sendableMsg, toChannel,MqttQoS.EXACTLY_ONCE);
 					//点对点发送的时候会记录最后发送对端的设备id
 					channel.attr(ConstantBean.LASTSENT_DEVICEID).set(deviceId);
 				}
