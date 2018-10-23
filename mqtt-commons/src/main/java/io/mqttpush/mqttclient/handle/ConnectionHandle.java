@@ -32,9 +32,10 @@ public class ConnectionHandle extends ChannelInboundHandlerAdapter {
 	String substop;
 	AtomicBoolean isValidate;
 
-	public ConnectionHandle(AtomicBoolean isValidate,ApiService apiService, String deviceId, String username, String password, String substop) {
+	public ConnectionHandle(AtomicBoolean isValidate, ApiService apiService, String deviceId, String username,
+			String password, String substop) {
 		super();
-		this.isValidate=isValidate;
+		this.isValidate = isValidate;
 		this.deviceId = deviceId;
 		this.username = username;
 		this.password = password;
@@ -49,10 +50,17 @@ public class ConnectionHandle extends ChannelInboundHandlerAdapter {
 	}
 
 	@Override
-		public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-			// TODO Auto-generated method stub
-			super.exceptionCaught(ctx, cause);
-		}
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+		logger.error("链路异常", cause);
+		super.exceptionCaught(ctx, cause);
+	}
+
+	@Override
+	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+		logger.warn("链路关闭");
+		super.channelInactive(ctx);
+	}
+
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 
@@ -66,13 +74,13 @@ public class ConnectionHandle extends ChannelInboundHandlerAdapter {
 			case CONNACK:
 				ack(ctx, (MqttConnAckMessage) message);
 				break;
-			case PINGRESP://如果又心跳回复就置为可用
+			case PINGRESP:// 如果又心跳回复就置为可用
 				isValidate.compareAndSet(false, true);
 				break;
 			case DISCONNECT:
 				ctx.close();
 				break;
-			default://如果有消息来了就置为可用,因为这里的default匹配的一定是其publish 或sub消息类型
+			default:// 如果有消息来了就置为可用,因为这里的default匹配的一定是其publish 或sub消息类型
 				isValidate.compareAndSet(false, true);
 				ctx.fireChannelRead(msg);
 				break;
@@ -95,9 +103,9 @@ public class ConnectionHandle extends ChannelInboundHandlerAdapter {
 			apiService.subscribe(substop, MqttQoS.AT_LEAST_ONCE);
 			break;
 		default:
-			if(logger.isDebugEnabled()) {
+			if (logger.isDebugEnabled()) {
 				// 登录失败
-				logger.warn("登录失败"+ackMessage.variableHeader().connectReturnCode());
+				logger.warn("登录失败" + ackMessage.variableHeader().connectReturnCode());
 			}
 			break;
 		}

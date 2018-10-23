@@ -41,7 +41,7 @@ public class Connetor {
 	final MessageListener defaultMessageListener;
 	ChannelFuture nowCloseFuture;
 	
-	AtomicBoolean isValidate=new AtomicBoolean(false);
+	AtomicBoolean isValidate=new AtomicBoolean(true);
 	
 	final String host;
 	final Integer port;
