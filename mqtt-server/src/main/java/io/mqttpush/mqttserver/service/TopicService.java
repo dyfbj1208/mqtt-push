@@ -88,6 +88,14 @@ public class TopicService {
 			return;
 		}
 
+		if (mapChannelGroup.containsKey(topicname)) {
+			ChannelGroup channelGroup = null;
+			if ((channelGroup = mapChannelGroup.get(topicname)) != null) {
+				channelGroup.add(channel);
+			}
+		}
+		
+		
 
 		if(!devSubTopics.containsKey(topicname)){
 
@@ -101,12 +109,7 @@ public class TopicService {
 		 */
 		devSubTopics.get(topicname).putIfAbsent(deviceId,mqttQoS);
 
-		if (mapChannelGroup.containsKey(topicname)) {
-			ChannelGroup channelGroup = null;
-			if ((channelGroup = mapChannelGroup.get(topicname)) != null) {
-				channelGroup.add(channel);
-			}
-		}
+		
 	}
 
 	/**

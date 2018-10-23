@@ -66,13 +66,14 @@ public class ConnectionHandle extends ChannelInboundHandlerAdapter {
 			case CONNACK:
 				ack(ctx, (MqttConnAckMessage) message);
 				break;
-			case PINGRESP:
+			case PINGRESP://如果又心跳回复就置为可用
 				isValidate.compareAndSet(false, true);
 				break;
 			case DISCONNECT:
 				ctx.close();
 				break;
-			default:
+			default://如果有消息来了就置为可用,因为这里的default匹配的一定是其publish 或sub消息类型
+				isValidate.compareAndSet(false, true);
 				ctx.fireChannelRead(msg);
 				break;
 			}

@@ -13,7 +13,7 @@ public class WebSocketGetWayServer {
 
 		int websocketport=9999;
 		String proxyhost="localhost";
-		int proxyport=10000;
+		int proxyport=8008;
 		
 		
 		if(args!=null) {

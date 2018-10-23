@@ -11,7 +11,7 @@ public class Test {
 
 	public static void main(String[] args) throws Exception {
 		
-		Connetor connetor=new Connetor();
+		
 		final DefaultApiService apiService=new DefaultApiService();
 		final DefaultMessageListener defaultMessageListener=new DefaultMessageListener();
 		Properties properties=new Properties();
@@ -42,7 +42,9 @@ public class Test {
 				} 
 			}
 		}.start();
-		connetor.connection(properties,apiService,defaultMessageListener).sync();
+		
+		Connetor connetor=new Connetor(properties,apiService,defaultMessageListener);
+		connetor.connection();
 	}
 
 }
