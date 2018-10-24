@@ -36,8 +36,8 @@ public class Statistics implements Runnable{
 
         if(logger.isInfoEnabled()){
 
-            int i1=requestCount.get();
-            int i2=responseCount.get();
+            int i1=requestCount.getAndSet(0);
+            int i2=responseCount.getAndSet(0);
 
             int abCon=aBconnCount.get();
             int bCCon=bCconnCount.get();
