@@ -61,8 +61,7 @@ public class AbWebSocketHandler extends ChannelInboundHandlerAdapter {
 				ch.pipeline().addLast(
 						new BcMqttHandle(
 								AbWebSocketHandler.this::getBcChannel,
-								AbWebSocketHandler.this::getAbChannel,
-								AbWebSocketHandler.this::aBChannelClose
+								AbWebSocketHandler.this::getAbChannel
 								));
 			}
 			
@@ -105,6 +104,12 @@ public class AbWebSocketHandler extends ChannelInboundHandlerAdapter {
 				if(logger.isDebugEnabled()) {
 					logger.debug("绑定成功AB-BC模型成功");
 				}
+				
+				if(logger.isDebugEnabled()) {
+					 logger.info("前端连接总数"+Statistics.aBconnCount.get());
+			         logger.info("后端连接总数"+Statistics.bCconnCount.get());
+				}
+				
 			}else{
 				logger.warn("连接失败",c.cause());
 			}
@@ -143,28 +148,15 @@ public class AbWebSocketHandler extends ChannelInboundHandlerAdapter {
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 
 		Channel abchannel=ctx.channel();
-
-
-		//如果连接以及无效了直接-1
-		if(!abchannel.isActive()) {			
-			Statistics.aBconnCount.decrementAndGet();
-			if(logger.isDebugEnabled()){
-				logger.debug("前端连接无效"+abchannel.toString());
-			}
-		}
 		
 		aBChannelClose(abchannel);
+		
 		super.channelInactive(ctx);
 	}
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
 		
 		Channel abchannel= ctx.channel();
-
-		//如果连接以及无效了直接-1
-		if(!abchannel.isActive()) {			
-			Statistics.aBconnCount.decrementAndGet();
-		}
 		
 		aBChannelClose(abchannel);
 		logger.warn("异常",cause);
@@ -189,24 +181,41 @@ public class AbWebSocketHandler extends ChannelInboundHandlerAdapter {
 		 * 无论关闭前端还是关闭后端都需要判断这个channel是否可用
 		 * 如果以及不可用了就说明可能以及被关闭了
 		 */
-		if(bcChannel!=null&&bcChannel.isActive()) {
-			if(logger.isDebugEnabled()){
-				logger.debug("关闭后端连接"+bcChannel.toString());
+		if(bcChannel!=null) {
+			
+			if(bcChannel.isActive()) {
+				bcChannel.close();
+				if(logger.isDebugEnabled()){
+					logger.debug("关闭后端连接"+bcChannel.toString());
+				}
 			}
-			bcChannel.close();
+			
+			
 			Statistics.bCconnCount.decrementAndGet();
 		}
 		
-		if(abchannel!=null&&abchannel.isActive()) {
-			//要最后关闭前端的，否则可能getBcChannel 返回空的后端连接
-			//导致后端连接泄漏
-			if(logger.isDebugEnabled()){
-				logger.debug("关闭前端连接"+abchannel.toString());
+		
+		
+		
+		
+		if(abchannel!=null) {
+			
+			if(abchannel.isActive()) {
+				channelFuture=abchannel.close();
+				if(logger.isDebugEnabled()){
+					logger.debug("关闭前端连接"+abchannel.toString());
+				}
 			}
-
-			channelFuture=abchannel.close();
+			
+			
 			Statistics.aBconnCount.decrementAndGet();
 		}
+		
+		if(logger.isDebugEnabled()) {
+			 logger.info("前端连接总数"+Statistics.aBconnCount.get());
+	         logger.info("后端连接总数"+Statistics.bCconnCount.get());
+		}
+		
 		return channelFuture;
 	}
 	

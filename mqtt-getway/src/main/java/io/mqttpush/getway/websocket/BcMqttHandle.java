@@ -26,14 +26,12 @@ public class BcMqttHandle extends ChannelInboundHandlerAdapter {
 	
 	Function<Channel, Channel> getAbChannel;
 
-	Function<Channel, ChannelFuture> closeChannelFunc;
 	 
 	 public BcMqttHandle(Function<Channel, Channel> getBcChannel,
-						 Function<Channel, Channel> getAbChannel,Function<Channel, ChannelFuture> closeChannelFunc) {
+						 Function<Channel, Channel> getAbChannel) {
 		super();
 		this.getBcChannel = getBcChannel;
 		this.getAbChannel = getAbChannel;
-		this.closeChannelFunc=closeChannelFunc;
 	}
 
 	
@@ -44,10 +42,11 @@ public class BcMqttHandle extends ChannelInboundHandlerAdapter {
 
 		 Channel abchannel=getAbChannel.apply(ctx.channel());
 
-		 if(abchannel!=null){
-			 closeChannelFunc.apply(abchannel);
-		 }
-
+		 /**
+		  * 关闭前端连接，触发AbWebSocketHandler的
+		  * aBChannelClose 处理，使连接计数器准确
+		  */
+		 abchannel.close();
 
 		super.channelInactive(ctx);
 	}
