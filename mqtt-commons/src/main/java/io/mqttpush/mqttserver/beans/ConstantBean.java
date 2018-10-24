@@ -31,6 +31,11 @@ public class ConstantBean {
 	public static final int MAX_ERROR_SENT=3;
 	
 	
+	
+	/**
+	 * 标识是系统发的
+	 */
+	public static final String  SYSTEM_IDENTIFY="/root/admin/reciv";
 	/**
 	 * 管理员接收主题
 	 * 这个主题可以收到发给管理员的消息

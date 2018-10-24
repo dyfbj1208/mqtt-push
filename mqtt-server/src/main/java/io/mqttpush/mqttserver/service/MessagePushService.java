@@ -204,25 +204,14 @@ public class MessagePushService {
 	 */
 	public void send2Admin(ByteBuf payload) {
 
-		MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, false, MqttQoS.AT_LEAST_ONCE,
-				false, 0);
-
-		MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(ConstantBean.adminRecivTopic,
-				payload.hashCode());
-
-		MqttPublishMessage mqttPublishMessage = new MqttPublishMessage(mqttFixedHeader, variableHeader, payload);
+	
 
 		/**
 		 * 使用channelgroup 和 组播发送都可以发送给adminTopic
 		 */
-// 		Consumer<String> consumer= (deviceId) -> {
-//
-//			Channel channel = channelUserService.channel(deviceId);
-//			channel.writeAndFlush(mqttPublishMessage);
-//		};
-		// topicService.channelsSend(ConstantBean.adminTopic, consumer);
-
-		topicService.channelsForGroup(ConstantBean.adminRecivTopic, mqttPublishMessage);
+		SendableMsg sendableMsg=
+				new SendableMsg(ConstantBean.adminRecivTopic, ConstantBean.SYSTEM_IDENTIFY, payload);
+		topicService.channelsForGroup(ConstantBean.adminRecivTopic, sendableMsg);
 
 	}
 

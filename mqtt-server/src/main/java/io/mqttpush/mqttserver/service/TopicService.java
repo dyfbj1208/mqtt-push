@@ -1,16 +1,18 @@
 package io.mqttpush.mqttserver.service;
 
 import io.mqttpush.mqttserver.beans.ConstantBean;
+import io.mqttpush.mqttserver.beans.SendableMsg;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
 import io.netty.channel.Channel;
 import io.netty.channel.group.ChannelGroup;
-import io.netty.channel.group.ChannelMatchers;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.concurrent.UnorderedThreadPoolEventExecutor;
 import org.apache.log4j.Logger;
 
+import java.security.SecureRandom;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
@@ -30,7 +32,7 @@ public class TopicService {
 	//CasCadeMap<String, String> many2ManytopChannels = new CasCadeMap<String, String>();
 	
 	final  Map<String,Map<String,MqttQoS>> devSubTopics;
-
+	final SecureRandom random=new SecureRandom();
 
 	ChannelUserService channelUserService;
 
@@ -166,10 +168,27 @@ public class TopicService {
 	 * @param topicName
 	 * @param publishMessage
 	 */
-	public void channelsForGroup(String topicName, MqttPublishMessage publishMessage) {
+	public void channelsForGroup(String topicName, SendableMsg sendableMsg) {
 
 		if (mapChannelGroup.containsKey(topicName)) {
-			mapChannelGroup.get(topicName).writeAndFlush(publishMessage, ChannelMatchers.all(), true);
+
+			/**
+			 * 这里随机选择一个channel 发送即可
+			 */
+			ChannelGroup channelGroup=mapChannelGroup.get(topicName);
+			Iterator<Channel> iterator= channelGroup.iterator();
+			Channel  randomChannel=null;
+			int i=0;
+			int bound=random.nextInt(channelGroup.size());
+			while(i<=bound&&iterator.hasNext()){
+				randomChannel=iterator.next();
+			}
+			
+			if(randomChannel!=null) {
+				 messagePushService.sendMsgForChannel(sendableMsg, randomChannel, MqttQoS.EXACTLY_ONCE);
+			}else if(logger.isDebugEnabled()){
+				logger.warn("为什么channelgroup全是空的?"+topicName);
+			}
 		}
 	}
 
