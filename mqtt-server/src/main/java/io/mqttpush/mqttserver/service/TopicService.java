@@ -1,21 +1,21 @@
 package io.mqttpush.mqttserver.service;
 
+import java.security.SecureRandom;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
+
+import org.apache.log4j.Logger;
+
 import io.mqttpush.mqttserver.beans.ConstantBean;
 import io.mqttpush.mqttserver.beans.SendableMsg;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
 import io.netty.channel.Channel;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.concurrent.UnorderedThreadPoolEventExecutor;
-import org.apache.log4j.Logger;
-
-import java.security.SecureRandom;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiConsumer;
 
 /**
  * 维护订阅相主题关的信息的service
@@ -46,7 +46,8 @@ public class TopicService {
 	public TopicService() {
 
 		channelUserService = ServiceBeans.getInstance().getChannelUserService();
-
+		
+		
 		mapChannelGroup = new ConcurrentHashMap<>();
 		ChannelGroup adminChannelGroup = new DefaultChannelGroup(new UnorderedThreadPoolEventExecutor(4));
 		mapChannelGroup.putIfAbsent(ConstantBean.adminRecivTopic, adminChannelGroup);
@@ -170,12 +171,17 @@ public class TopicService {
 	 */
 	public void channelsForGroup(String topicName, SendableMsg sendableMsg) {
 
+		MessagePushService messagePushService=this.messagePushService;
 		if (mapChannelGroup.containsKey(topicName)) {
 
 			/**
 			 * 这里随机选择一个channel 发送即可
 			 */
 			ChannelGroup channelGroup=mapChannelGroup.get(topicName);
+			
+			if(channelGroup.size()<=0) {
+				return;
+			}
 			Iterator<Channel> iterator= channelGroup.iterator();
 			Channel  randomChannel=null;
 			int i=0;
@@ -184,7 +190,13 @@ public class TopicService {
 				randomChannel=iterator.next();
 			}
 			
-			if(randomChannel!=null) {
+			if(messagePushService==null) {
+				messagePushService=
+						this.messagePushService=
+						ServiceBeans.getInstance().getMessagePushService();
+			}
+			
+			if(randomChannel!=null&&messagePushService!=null) {
 				 messagePushService.sendMsgForChannel(sendableMsg, randomChannel, MqttQoS.EXACTLY_ONCE);
 			}else if(logger.isDebugEnabled()){
 				logger.warn("为什么channelgroup全是空的?"+topicName);
