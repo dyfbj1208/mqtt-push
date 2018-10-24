@@ -1,11 +1,14 @@
 package io.mqttpush.getway.websocket;
 
 import io.mqttpush.getway.GetWayConstantBean;
+import io.mqttpush.getway.common.Statistics;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+
+import java.util.concurrent.TimeUnit;
 
 public class WebSocketGetWayServer {
 
@@ -43,7 +46,8 @@ public class WebSocketGetWayServer {
 	
 		
 		GetWayConstantBean.instance(proxyhost, proxyport);
-		
+
+		Statistics statistics=new Statistics();
 		
 		EventLoopGroup bossGroup = new NioEventLoopGroup();
 		EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -58,6 +62,12 @@ public class WebSocketGetWayServer {
 			try {
 				channelFuture = serverBootstrap.bind(websocketport).sync();
 				System.out.println("websocker网关启动成功 " + channelFuture.channel().localAddress());
+
+				/**
+				 * 定时器两分钟统计一下QPS
+				 */
+				workerGroup.scheduleWithFixedDelay(statistics,1,1, TimeUnit.MINUTES);
+
 				channelFuture.channel().closeFuture().sync();
 			} catch (InterruptedException e) {
 				e.printStackTrace();

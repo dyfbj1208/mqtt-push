@@ -1,22 +1,17 @@
 package io.mqttpush.getway.websocket;
 
-import java.time.LocalDateTime;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.apache.log4j.Logger;
-
 import io.mqttpush.getway.GetWayConstantBean;
+import io.mqttpush.getway.common.Statistics;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
+import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import org.apache.log4j.Logger;
+
+import java.time.LocalDateTime;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
@@ -66,7 +61,8 @@ public class AbWebSocketHandler extends ChannelInboundHandlerAdapter {
 				ch.pipeline().addLast(
 						new BcMqttHandle(
 								AbWebSocketHandler.this::getBcChannel,
-								AbWebSocketHandler.this::getAbChannel
+								AbWebSocketHandler.this::getAbChannel,
+								AbWebSocketHandler.this::aBChannelClose
 								));
 			}
 			
@@ -79,22 +75,41 @@ public class AbWebSocketHandler extends ChannelInboundHandlerAdapter {
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
 		super.channelActive(ctx);
-		System.out.println("用户上线: " + ctx.channel().id().asLongText());
+
+		Statistics.aBconnCount.incrementAndGet();
+
+		if(logger.isDebugEnabled()) {
+			logger.debug(("用户上线: " + ctx.channel().id().asLongText()));
+		}
 		
 		/**
 		 * 连接后端MQTT 服务器，绑定 前后连接
 		 */
 		ChannelFuture channelFuture=constantBean.wsbootstrap.connect(
 				constantBean.mqttserver,constantBean.mqttport);
-		Channel abchannel=ctx.channel();
-		Channel bcChannel=channelFuture.channel();
-	
-		abchannel.attr(constantBean.bcChannelAttr).set(bcChannel);
-		bcChannel.attr(constantBean.abChannelAttr).set(abchannel);
-	
-		if(logger.isDebugEnabled()) {			
-			logger.debug("绑定成功AB-BC模型成功");
-		}
+
+		final Channel abchannel=ctx.channel();
+		final Channel bcChannel=channelFuture.channel();
+
+
+/**
+ * 一定要等链接成功了才算绑定成功
+ */
+		channelFuture.addListener((c)->{
+			if(c.isSuccess()){
+
+				abchannel.attr(constantBean.bcChannelAttr).set(bcChannel);
+				bcChannel.attr(constantBean.abChannelAttr).set(abchannel);
+
+				Statistics.bCconnCount.incrementAndGet();
+				if(logger.isDebugEnabled()) {
+					logger.debug("绑定成功AB-BC模型成功");
+				}
+			}else{
+				logger.warn("连接失败",c.cause());
+			}
+		});
+
 		
 	}
 
@@ -114,7 +129,7 @@ public class AbWebSocketHandler extends ChannelInboundHandlerAdapter {
 		Channel tochannel=getBcChannel(fromchannel);
 		if(tochannel!=null&&tochannel.isActive()) {
 			tochannel.writeAndFlush(binaryWebSocketFrame.content());
-			
+			Statistics.requestCount.incrementAndGet();
 			if(logger.isDebugEnabled()) {			
 				logger.debug("websocket写入到MQTT服务"+msg);
 			}
@@ -126,36 +141,78 @@ public class AbWebSocketHandler extends ChannelInboundHandlerAdapter {
 
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-		super.channelInactive(ctx);
-		
-		
+
 		Channel abchannel=ctx.channel();
-		Channel bcChannel=getBcChannel(abchannel);
-		
-		if(bcChannel!=null&&bcChannel.isActive()) {
-			bcChannel.close();
+
+
+		//如果连接以及无效了直接-1
+		if(!abchannel.isActive()) {			
+			Statistics.aBconnCount.decrementAndGet();
+			if(logger.isDebugEnabled()){
+				logger.debug("前端连接无效"+abchannel.toString());
+			}
 		}
+		
+		aBChannelClose(abchannel);
+		super.channelInactive(ctx);
 	}
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
 		
 		Channel abchannel= ctx.channel();
-		abchannel.close();
-		Channel bcChannel=getBcChannel(abchannel);
-		
-		if(bcChannel!=null&&bcChannel.isActive()) {
-				bcChannel.close();
+
+		//如果连接以及无效了直接-1
+		if(!abchannel.isActive()) {			
+			Statistics.aBconnCount.decrementAndGet();
 		}
 		
+		aBChannelClose(abchannel);
 		logger.warn("异常",cause);
 	}
-	
-	
-	
+
+
+	/**
+	 * 关闭前端连接并且关闭关联的后端连接
+	 * 所有的关闭必须根据前端连接关闭后端连接
+	 * @param abchannel  前端连接
+	 * @return
+	 */
+	public  ChannelFuture  aBChannelClose(Channel abchannel){
+
+
+
+		ChannelFuture channelFuture=null;
+		Channel bcChannel=getBcChannel(abchannel);
+
+
+		/**
+		 * 无论关闭前端还是关闭后端都需要判断这个channel是否可用
+		 * 如果以及不可用了就说明可能以及被关闭了
+		 */
+		if(bcChannel!=null&&bcChannel.isActive()) {
+			if(logger.isDebugEnabled()){
+				logger.debug("关闭后端连接"+bcChannel.toString());
+			}
+			bcChannel.close();
+			Statistics.bCconnCount.decrementAndGet();
+		}
+		
+		if(abchannel!=null&&abchannel.isActive()) {
+			//要最后关闭前端的，否则可能getBcChannel 返回空的后端连接
+			//导致后端连接泄漏
+			if(logger.isDebugEnabled()){
+				logger.debug("关闭前端连接"+abchannel.toString());
+			}
+
+			channelFuture=abchannel.close();
+			Statistics.aBconnCount.decrementAndGet();
+		}
+		return channelFuture;
+	}
 	
 	/**
 	 * 根据前端channel  得到绑定的后端channel
-	 * @param fromchannel
+	 * @param abChannel
 	 * @return
 	 */
 	public Channel getBcChannel(Channel abChannel) {
@@ -176,7 +233,7 @@ public class AbWebSocketHandler extends ChannelInboundHandlerAdapter {
 	
 	/**
 	 * 根据后端channel  得到绑定的前端channel
-	 * @param fromchannel
+	 * @param bcChannel
 	 * @return
 	 */
 	public Channel getAbChannel(Channel bcChannel) {

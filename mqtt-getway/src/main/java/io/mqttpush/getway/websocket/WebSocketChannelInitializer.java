@@ -6,8 +6,6 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 
 public class WebSocketChannelInitializer extends ChannelInitializer<SocketChannel>{
@@ -28,7 +26,7 @@ public class WebSocketChannelInitializer extends ChannelInitializer<SocketChanne
         //用于处理websocket, /ws为访问websocket时的uri
         pipeline.addLast("webSocketServerProtocolHandler", new WebSocketServerProtocolHandler("/mqtt","*"));
         
-        pipeline.addLast(new LoggingHandler(LogLevel.DEBUG));
+       // pipeline.addLast(new LoggingHandler(LogLevel.DEBUG));
         
         pipeline.addLast("myWebSocketHandler", new AbWebSocketHandler());
 
