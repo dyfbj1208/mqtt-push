@@ -1,7 +1,5 @@
 package io.mqttpush.getway.http;
 
-import org.apache.log4j.Logger;
-
 import io.mqttpush.getway.GetWayConstantBean;
 import io.mqttpush.getway.http.controller.ControllBeans;
 import io.mqttpush.getway.http.controller.Controller;
@@ -10,18 +8,9 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.nio.AbstractNioByteChannel;
-import io.netty.channel.nio.AbstractNioChannel;
-import io.netty.channel.nio.AbstractNioMessageChannel;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpUtil;
-import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.*;
 import io.netty.util.AsciiString;
+import org.apache.log4j.Logger;
 
 public class AbHttpHandle extends ChannelInboundHandlerAdapter {
 
@@ -31,8 +20,8 @@ public class AbHttpHandle extends ChannelInboundHandlerAdapter {
 	
 	private static final byte[] unSouppert="Unsouppert request Method".getBytes();
 
-	private static final AsciiString CONTENT_TYPE = AsciiString.cached("Content-Type");
-	private static final AsciiString CONTENT_LENGTH = AsciiString.cached("Content-Length");
+	static final AsciiString CONTENT_TYPE = AsciiString.cached("Content-Type");
+	static final AsciiString CONTENT_LENGTH = AsciiString.cached("Content-Length");
 	private static final AsciiString CONNECTION = AsciiString.cached("Connection");
 	private static final AsciiString KEEP_ALIVE = AsciiString.cached("keep-alive");
 	
@@ -130,7 +119,8 @@ public class AbHttpHandle extends ChannelInboundHandlerAdapter {
 	/**
 	 * 根据请求头决定应有的controller
 	 *只支持JSON 文本请求 和mutilform 二进制请求
-	 * @param req
+	 * @param channel
+	 * @param request
 	 * @param response
 	 */
 	public void applyController(Channel channel,HttpRequest request,HttpResponse response) {

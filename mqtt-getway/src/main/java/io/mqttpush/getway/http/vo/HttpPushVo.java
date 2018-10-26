@@ -1,10 +1,9 @@
 package io.mqttpush.getway.http.vo;
 
-import java.nio.charset.Charset;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.UnpooledByteBufAllocator;
+
+import java.nio.charset.Charset;
 
 /**
  * http 请求接口的格式
@@ -86,11 +85,19 @@ public class HttpPushVo {
 	 */
 	public ByteBuf getByteContent() {
 		
-		if(byteContent==null&&textcontent!=null) {
+		if(byteContent==null) {
+
 			ByteBuf byteBuf=PooledByteBufAllocator.DEFAULT.buffer();
-			byteBuf.writeCharSequence(textcontent, Charset.forName("utf-8"));
+
+			if(textcontent!=null){
+				byteBuf.writeCharSequence(textcontent, Charset.forName("utf-8"));
+			}else{
+				byteBuf.writeByte(0);
+			}
 			this.byteContent=byteBuf;
 		}
+
+
 		return byteContent;
 	}
 

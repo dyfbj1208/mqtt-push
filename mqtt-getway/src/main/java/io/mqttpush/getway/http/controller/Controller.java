@@ -1,8 +1,5 @@
 package io.mqttpush.getway.http.controller;
 
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import io.mqttpush.getway.GetWayConstantBean;
 import io.mqttpush.getway.http.BcMqttHandle;
 import io.mqttpush.getway.http.vo.HttpPushVo;
@@ -15,18 +12,10 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.mqtt.MqttConnectMessage;
-import io.netty.handler.codec.mqtt.MqttConnectPayload;
-import io.netty.handler.codec.mqtt.MqttConnectVariableHeader;
-import io.netty.handler.codec.mqtt.MqttDecoder;
-import io.netty.handler.codec.mqtt.MqttEncoder;
-import io.netty.handler.codec.mqtt.MqttFixedHeader;
-import io.netty.handler.codec.mqtt.MqttMessageType;
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
-import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
-import io.netty.handler.codec.mqtt.MqttQoS;
-import io.netty.handler.codec.mqtt.MqttVersion;
-import io.netty.util.concurrent.GenericFutureListener;
+import io.netty.handler.codec.mqtt.*;
+
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 抽象的controller
@@ -90,7 +79,6 @@ public abstract class Controller {
 	 * 得到设置好了的channel，否则连接并且设置它
 	 * 
 	 * @param identify
-	 * @param callback
 	 * @return
 	 */
 	protected Channel getAndSetChannelByIdentify(String identify) {
@@ -118,12 +106,8 @@ public abstract class Controller {
 				oldChannel.close();
 			}
 			
-			channelFuture.addListener(new GenericFutureListener<ChannelFuture>() {
-				@Override
-				public void operationComplete(ChannelFuture future) throws Exception {
-					loginMqtt(future.channel(), identify, "user", "user123456");
-				}
-				
+			channelFuture.addListener((ChannelFuture future)-> {
+				loginMqtt(future.channel(), identify, "user", "user123456");
 			});
 			
 
@@ -132,7 +116,7 @@ public abstract class Controller {
 		if (bcHttpChannels.containsKey(identify)) {
 			return bcHttpChannels.get(identify);
 		}
-		return null;
+		return channel;
 
 	}
 
@@ -152,8 +136,8 @@ public abstract class Controller {
 		MqttConnectVariableHeader variableHeader = new MqttConnectVariableHeader(MqttVersion.MQTT_3_1.protocolName(),
 				MqttVersion.MQTT_3_1.protocolLevel(), true, true, false, 0, false, false, 10);
 
-		MqttConnectPayload payload = new MqttConnectPayload(deviceId, null, null, username, password.getBytes());
-		MqttConnectMessage connectMessage = new MqttConnectMessage(mqttFixedHeader, variableHeader, payload);
+		MqttConnectMessage connectMessage = new MqttConnectMessage(mqttFixedHeader, variableHeader,
+				new MqttConnectPayload(deviceId, null, null, username, password.getBytes()));
 		channel.writeAndFlush(connectMessage);
 	}
 
