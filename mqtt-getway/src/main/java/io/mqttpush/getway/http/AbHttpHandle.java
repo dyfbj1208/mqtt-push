@@ -1,6 +1,7 @@
 package io.mqttpush.getway.http;
 
 import io.mqttpush.getway.GetWayConstantBean;
+import io.mqttpush.getway.common.Statistics;
 import io.mqttpush.getway.http.controller.ControllBeans;
 import io.mqttpush.getway.http.controller.Controller;
 import io.netty.buffer.Unpooled;
@@ -29,9 +30,12 @@ public class AbHttpHandle extends ChannelInboundHandlerAdapter {
 	final String JSON_CONTENT_TYPE="application/json";
 	 
 	final  ControllBeans controllbean=ControllBeans.getInstance();
-	
+
+
 	final GetWayConstantBean constantBean = GetWayConstantBean.instance();
-	
+
+
+
 
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
@@ -43,24 +47,28 @@ public class AbHttpHandle extends ChannelInboundHandlerAdapter {
 		 cause.printStackTrace();
 	}
 
-	
-	
+
+
+
+	@Override
+	public void channelActive(ChannelHandlerContext ctx) throws Exception {
+		super.channelActive(ctx);
+		/**
+		 * 前端连接数+1
+		 */
+		Statistics.httpAbCount.incrementAndGet();
+	}
+
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 		super.channelInactive(ctx);
-		
-		Channel requestChannel=ctx.channel();
-		String closeIdentify=null;
-		if(requestChannel.hasAttr(ControllBeans.requestIdentifyKey)) {
-			closeIdentify=requestChannel.attr(ControllBeans.requestIdentifyKey).get();
-		}
-		if(closeIdentify!=null&&
-				constantBean.bcHttpChannels.containsKey(closeIdentify)) {
-			Channel bcChannel=constantBean.bcHttpChannels.get(closeIdentify);
-			if(bcChannel.isActive()) {
-				bcChannel.flush();
-			}
-		}
+
+		/**
+		 * 前端连接-1
+		 */
+		Statistics.httpAbCount.decrementAndGet();
+
+
 		if(logger.isDebugEnabled()) {
 			logger.debug(ctx.channel()+"channelInactive");
 		}
@@ -141,8 +149,11 @@ public class AbHttpHandle extends ChannelInboundHandlerAdapter {
 		if(controller==null) {
 			controller=controllbean.formController();
 		}
-		
-		
+
+		/**
+		 * 前端请求数+1
+		 */
+		Statistics.httpReqCount.incrementAndGet();
 		controller.service(channel,request,response);
 	}
 

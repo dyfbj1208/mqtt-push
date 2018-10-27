@@ -1,6 +1,7 @@
 package io.mqttpush.getway.http;
 
 import io.mqttpush.getway.GetWayConstantBean;
+import io.mqttpush.getway.common.Statistics;
 import io.mqttpush.getway.http.controller.ControllBeans;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -141,9 +142,18 @@ public class BcMqttHandle extends ChannelInboundHandlerAdapter {
 						defaultFullHttpRequest.headers().set(AbHttpHandle.CONTENT_TYPE, "application/json");
 						defaultFullHttpRequest.headers().set(AbHttpHandle.CONTENT_LENGTH, httpContent.readableBytes());
 						future.channel().writeAndFlush(defaultFullHttpRequest).addListener(ChannelFutureListener.CLOSE);
+						/**
+						 * http回调数+1
+						 */
+						Statistics.httpResCount.incrementAndGet();
 					}
 				});
+			}else{
+				logger.warn("回调需要找到http主机，现在没有找到host"+callback);
 			}
+		}else{
+
+			logger.warn("为什么call地址为空?");
 		}
 
 	}
@@ -166,4 +176,22 @@ public class BcMqttHandle extends ChannelInboundHandlerAdapter {
 		channel.flush();
 	}
 
+	@Override
+	public void channelActive(ChannelHandlerContext ctx) throws Exception {
+		super.channelActive(ctx);
+		/**
+		 * http后端连接数+1
+		 */
+		Statistics.httpBcCount.incrementAndGet();
+	}
+
+	@Override
+	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+		super.channelInactive(ctx);
+
+		/**
+		 * http后端连接数-1
+		 */
+		Statistics.httpBcCount.decrementAndGet();
+	}
 }

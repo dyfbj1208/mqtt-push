@@ -11,6 +11,25 @@ public class Statistics implements Runnable{
     Logger logger=Logger.getLogger(getClass());
 
     /**
+     * http前端连接数
+     */
+    public static AtomicInteger httpAbCount=new AtomicInteger(0);
+
+    /**
+     * 回调http后端连接数
+     */
+    public  static  AtomicInteger httpBcCount=new AtomicInteger(0);
+
+    /**
+     * http 前端请求数
+     */
+    public static AtomicInteger httpReqCount=new AtomicInteger(0);
+
+    /**
+     * http后端响应数
+     */
+    public static AtomicInteger httpResCount=new AtomicInteger(0);
+    /**
      * 前端连接数
      */
     public static AtomicInteger aBconnCount=new AtomicInteger(0);
@@ -42,11 +61,20 @@ public class Statistics implements Runnable{
             int abCon=aBconnCount.get();
             int bCCon=bCconnCount.get();
 
-            logger.info("请求总是"+i1);
-            logger.info("响应总是"+i2);
+            if(logger.isInfoEnabled()){
 
-            logger.info("前端连接总数"+abCon);
-            logger.info("后端连接总数"+bCCon);
+                logger.info("http请求数"+httpAbCount);
+                logger.info("http回调数"+httpBcCount);
+                logger.info("http前端连接数"+httpReqCount);
+                logger.info("http后端连接数"+httpResCount);
+
+
+                logger.info("请求总是"+i1);
+                logger.info("响应总是"+i2);
+
+                logger.info("前端连接总数"+abCon);
+                logger.info("后端连接总数"+bCCon);
+            }
 
             long nowTimeStamp=System.currentTimeMillis();
             long  diffSeconds=(nowTimeStamp-lastTimeStamp)/1000;
