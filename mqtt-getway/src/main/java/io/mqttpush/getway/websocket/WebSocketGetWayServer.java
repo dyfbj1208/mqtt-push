@@ -47,7 +47,7 @@ public class WebSocketGetWayServer {
 		
 		GetWayConstantBean.instance(proxyhost, proxyport);
 
-		Statistics statistics=new Statistics();
+		Statistics statistics=Statistics.instance();
 		
 		EventLoopGroup bossGroup = new NioEventLoopGroup();
 		EventLoopGroup workerGroup = new NioEventLoopGroup();

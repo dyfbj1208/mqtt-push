@@ -15,7 +15,6 @@ import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.mqtt.*;
 import org.apache.log4j.Logger;
 
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,7 +34,7 @@ public class BcMqttHandle extends ChannelInboundHandlerAdapter {
 	 */
 	static AtomicBoolean isInit = new AtomicBoolean(false);
 
-	Map<String, Channel> bcChannels;
+
 
 	final GetWayConstantBean constantBean = GetWayConstantBean.instance();
 
@@ -49,13 +48,16 @@ public class BcMqttHandle extends ChannelInboundHandlerAdapter {
 		}
 	}
 
+	/**
+	 * 初始化连接的参数
+	 */
 	public void initAbChannel() {
 
-		Bootstrap bootstrap = constantBean.httpCallbackStart;
+		Bootstrap bootstrap = constantBean.httpCallbackStap;
 		bootstrap.group(constantBean.httpCallbackgroup).channel(NioSocketChannel.class)
 				.handler(new ChannelInitializer<SocketChannel>() {
 					@Override
-					protected void initChannel(SocketChannel ch) throws Exception {
+					protected void initChannel(SocketChannel ch)  {
 						ch.pipeline().addLast(new HttpClientCodec());
 					}
 
@@ -133,7 +135,7 @@ public class BcMqttHandle extends ChannelInboundHandlerAdapter {
 				/**
 				 * 连接回调服务器 并在连接成功之后 发消息
 				 */
-				ChannelFuture channelFuture = constantBean.httpCallbackStart.connect(host, port);
+				ChannelFuture channelFuture = constantBean.httpCallbackStap.connect(host, port);
 				final ByteBuf httpContent = publishMessage.content();
 				channelFuture.addListener((ChannelFuture future) -> {
 					if (future.isSuccess()) {

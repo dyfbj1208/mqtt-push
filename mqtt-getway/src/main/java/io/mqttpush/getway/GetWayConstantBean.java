@@ -1,13 +1,13 @@
 package io.mqttpush.getway;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.AttributeKey;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class GetWayConstantBean {
 
@@ -21,7 +21,7 @@ public class GetWayConstantBean {
 	
 	public final Bootstrap httpbootstrap = new Bootstrap();
 	
-	public  final  Bootstrap  httpCallbackStart=new Bootstrap(); 
+	public  final  Bootstrap  httpCallbackStap=new Bootstrap();
 	
 	
 	

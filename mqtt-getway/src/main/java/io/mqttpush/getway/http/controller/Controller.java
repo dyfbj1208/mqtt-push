@@ -13,9 +13,11 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.mqtt.*;
+import org.apache.log4j.Logger;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 
 /**
  * 抽象的controller
@@ -25,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public abstract class Controller {
 
+	Logger logger=Logger.getLogger(Controller.class);
 	/**
 	 * 标志是否初始化了channnel
 	 */
@@ -96,6 +99,9 @@ public abstract class Controller {
 			}
 		}
 
+		/**
+		 * 连接后端MQTT，如果有旧的channel就关闭它
+		 */
 		if (needInitChannel) {
 			ChannelFuture channelFuture = constantBean.httpbootstrap.connect(constantBean.mqttserver,
 					constantBean.mqttport);
@@ -107,22 +113,24 @@ public abstract class Controller {
 			}
 			
 			channelFuture.addListener((ChannelFuture future)-> {
-				loginMqtt(future.channel(), identify, "user", "user123456");
+				if(future.isSuccess()){
+					loginMqtt(future.channel(), identify, "user", "user123456");
+				}else{
+					logger.warn("http请求连接后端MQTT失败",future.cause());
+				}
+
 			});
 			
 
 		}
 
-		if (bcHttpChannels.containsKey(identify)) {
-			return bcHttpChannels.get(identify);
-		}
 		return channel;
 
 	}
 
 	/**
-	 * 登录
-	 * 
+	 * 登录后端MQTT
+	 * 这一般只有初次连接的时候才会有
 	 * @param channel
 	 * @param deviceId
 	 * @param username

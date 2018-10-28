@@ -21,12 +21,12 @@ public class Statistics implements Runnable{
     public  static  AtomicInteger httpBcCount=new AtomicInteger(0);
 
     /**
-     * http 前端请求数
+     * http 前端请求接口数
      */
     public static AtomicInteger httpReqCount=new AtomicInteger(0);
 
     /**
-     * http后端响应数
+     * http后端响应回调接口数
      */
     public static AtomicInteger httpResCount=new AtomicInteger(0);
     /**
@@ -50,6 +50,15 @@ public class Statistics implements Runnable{
 
      long lastTimeStamp=0;
 
+    private static Statistics statistics=new Statistics();
+
+     private  Statistics(){
+
+     }
+
+     public static  Statistics instance(){
+         return statistics;
+     }
     @Override
     public void run() {
 
@@ -63,10 +72,10 @@ public class Statistics implements Runnable{
 
             if(logger.isInfoEnabled()){
 
-                logger.info("http请求数"+httpAbCount);
-                logger.info("http回调数"+httpBcCount);
-                logger.info("http前端连接数"+httpReqCount);
-                logger.info("http后端连接数"+httpResCount);
+                logger.info("http前端连接数"+httpAbCount.get());
+                logger.info("http后端连接数"+httpBcCount.get());
+                logger.info("http前端请求数"+httpReqCount.getAndSet(0));
+                logger.info("http后端回调数"+httpResCount.getAndSet(0));
 
 
                 logger.info("请求总是"+i1);

@@ -18,6 +18,11 @@
 			<artifactId>fastjson</artifactId>
 			<version>${fastjson.version}</version>
 		</dependency>
+		
+				<dependency>
+			<groupId>io.mqttpush</groupId>
+			<artifactId>mqtt-commons</artifactId>
+		</dependency>
   </dependencies>
   
   
