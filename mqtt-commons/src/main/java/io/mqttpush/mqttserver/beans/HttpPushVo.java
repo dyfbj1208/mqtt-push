@@ -1,4 +1,4 @@
-package io.mqttpush.getway.http.vo;
+package io.mqttpush.mqttserver.beans;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -134,6 +134,15 @@ public class HttpPushVo {
 	 */
 	public void setByteContent(ByteBuf byteContent) {
 		this.byteContent = byteContent;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "HttpPushVo [callback=" + callback + ", fromIdentify=" + fromIdentify + ", toIdentify=" + toIdentify
+				+ ", textcontent=" + textcontent + ", byteContent=" + byteContent + "]";
 	}
 	
 	

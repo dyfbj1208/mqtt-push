@@ -1,6 +1,6 @@
 package io.mqttpush.getway.http.controller;
 
-import io.mqttpush.getway.http.vo.HttpPushVo;
+import io.mqttpush.mqttserver.beans.HttpPushVo;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpRequest;

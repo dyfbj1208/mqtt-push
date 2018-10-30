@@ -5,7 +5,7 @@ import java.nio.charset.Charset;
 import com.alibaba.fastjson.JSON;
 
 import io.mqttpush.getway.GetWayConstantBean;
-import io.mqttpush.getway.http.vo.HttpPushVo;
+import io.mqttpush.mqttserver.beans.HttpPushVo;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -45,8 +45,12 @@ public class FullTextController extends Controller {
 		byte[] bs = new byte[byteBuf.readableBytes()];
 		byteBuf.readBytes(bs);
 
-		HttpPushVo httpPushVo = JSON.parseObject(new String(bs), HttpPushVo.class);
+		HttpPushVo httpPushVo = JSON.parseObject(new String(bs,Charset.forName("utf-8")),
+				HttpPushVo.class);
 
+		if(logger.isDebugEnabled()&&httpPushVo!=null) {
+			logger.debug("JSON序列化成功"+httpPushVo.toString());
+		}
 		super.routeData(requestChannel, httpPushVo);
 
 	}

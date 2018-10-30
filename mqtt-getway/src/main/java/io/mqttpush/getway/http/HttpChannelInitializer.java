@@ -24,9 +24,7 @@ public class HttpChannelInitializer extends ChannelInitializer<SocketChannel>{
          */
         pipeline.addLast("httpObjectAggregator", new HttpObjectAggregator(8192));
         
-        
-        pipeline.addLast(new LoggingHandler(LogLevel.DEBUG));
-        
+      
         pipeline.addLast("myHttpHandler", new AbHttpHandle());
 
     }

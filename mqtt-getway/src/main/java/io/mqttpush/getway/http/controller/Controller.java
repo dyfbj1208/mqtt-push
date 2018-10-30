@@ -2,7 +2,7 @@ package io.mqttpush.getway.http.controller;
 
 import io.mqttpush.getway.GetWayConstantBean;
 import io.mqttpush.getway.http.BcMqttHandle;
-import io.mqttpush.getway.http.vo.HttpPushVo;
+import io.mqttpush.mqttserver.beans.HttpPushVo;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -18,7 +18,6 @@ import org.apache.log4j.Logger;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-
 /**
  * 抽象的controller
  * 
@@ -27,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public abstract class Controller {
 
-	Logger logger=Logger.getLogger(Controller.class);
+	Logger logger = Logger.getLogger(Controller.class);
 	/**
 	 * 标志是否初始化了channnel
 	 */
@@ -35,7 +34,6 @@ public abstract class Controller {
 
 	final GetWayConstantBean constantBean = GetWayConstantBean.instance();
 
-	
 	/**
 	 * 服务于请求
 	 * 
@@ -45,15 +43,14 @@ public abstract class Controller {
 	 */
 	public abstract void service(Channel requestChannel, HttpRequest request, HttpResponse response);
 
-	
-	
 	/**
 	 * 把报文路由给MQTT 服务
+	 * 
 	 * @param requestChannel
 	 * @param httpPushVo
 	 */
-	protected void routeData(Channel requestChannel,HttpPushVo httpPushVo) {
-		
+	protected void routeData(Channel requestChannel, HttpPushVo httpPushVo) {
+
 		Channel channel = getAndSetChannelByIdentify(httpPushVo.getFromIdentify());
 
 		if (channel != null) {
@@ -61,23 +58,41 @@ public abstract class Controller {
 			channel.attr(constantBean.bcHttpCallBackAttr).set(httpPushVo.getCallback());
 
 			MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, false, MqttQoS.AT_LEAST_ONCE,
-					false, 0);
+					true, 0);
 
+			
 			MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(
 					constantBean.ONE2ONE_CHAT_PREFIX + httpPushVo.getToIdentify(), httpPushVo.hashCode());
 
+			
 			MqttPublishMessage mqttPublishMessage = new MqttPublishMessage(mqttFixedHeader, variableHeader,
 					httpPushVo.getByteContent());
 
+			requestChannel.attr(ControllBeans.requestIdentifyKey).set(httpPushVo.getFromIdentify());
+
 			if (channel.hasAttr(ControllBeans.loginKey) && channel.attr(ControllBeans.loginKey).get()) {
 				channel.writeAndFlush(mqttPublishMessage);
-				requestChannel.attr(ControllBeans.requestIdentifyKey).set(httpPushVo.getFromIdentify());
+				if (logger.isDebugEnabled()) {
+					logger.debug("已登录,http写入MQTT");
+				}
 			} else {
 				ControllBeans.mqttPublishMessages.offer(mqttPublishMessage);
+				if (logger.isDebugEnabled()) {
+					logger.debug("未登录,放入队列" + httpPushVo.toString());
+				}
 			}
 
+		} else {
+
+			logger.warn("竟然找不到channel");
+		}
+
+		if (logger.isDebugEnabled()) {
+			logger.debug(httpPushVo.getFromIdentify() + "------------------->" + httpPushVo.getToIdentify() + ":"
+					+ httpPushVo.getTextcontent());
 		}
 	}
+
 	/**
 	 * 得到设置好了的channel，否则连接并且设置它
 	 * 
@@ -96,6 +111,8 @@ public abstract class Controller {
 			channel = bcHttpChannels.get(identify);
 			if (channel == null || !channel.isActive()) {
 				needInitChannel = true;
+			} else {
+				return channel;
 			}
 		}
 
@@ -103,24 +120,35 @@ public abstract class Controller {
 		 * 连接后端MQTT，如果有旧的channel就关闭它
 		 */
 		if (needInitChannel) {
-			ChannelFuture channelFuture = constantBean.httpbootstrap.connect(constantBean.mqttserver,
-					constantBean.mqttport);
 
-			Channel oldChannel = bcHttpChannels.put(identify, channel = channelFuture.channel());
+			/**
+			 * TODO 如果这里有多个http请求同时携带的相同的identify ，运行的快的线程返回的channel其实是一个无效的 所以这里要对identify
+			 * 加锁
+			 */
 
-			if (oldChannel != null) {
-				oldChannel.close();
-			}
-			
-			channelFuture.addListener((ChannelFuture future)-> {
-				if(future.isSuccess()){
-					loginMqtt(future.channel(), identify, "user", "user123456");
-				}else{
-					logger.warn("http请求连接后端MQTT失败",future.cause());
+			synchronized (identify) {
+
+				ChannelFuture channelFuture = constantBean.httpbootstrap.connect(constantBean.mqttserver,
+						constantBean.mqttport);
+
+				Channel oldChannel = bcHttpChannels.put(identify, channel = channelFuture.channel());
+
+				if (oldChannel != null) {
+					oldChannel.close();
 				}
 
-			});
-			
+				channelFuture.addListener((ChannelFuture future) -> {
+					if (future.isSuccess()) {
+						loginMqtt(future.channel(), identify, "user", "user123456");
+					} else {
+						logger.warn("http请求连接后端MQTT失败", future.cause());
+					}
+
+				});			
+				if (logger.isDebugEnabled()) {
+					logger.debug("连接后端mq");
+				}
+			}
 
 		}
 
@@ -129,8 +157,8 @@ public abstract class Controller {
 	}
 
 	/**
-	 * 登录后端MQTT
-	 * 这一般只有初次连接的时候才会有
+	 * 登录后端MQTT 这一般只有初次连接的时候才会有
+	 * 
 	 * @param channel
 	 * @param deviceId
 	 * @param username
@@ -141,12 +169,16 @@ public abstract class Controller {
 		MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.CONNECT, false, MqttQoS.AT_MOST_ONCE,
 				false, 0);
 
-		MqttConnectVariableHeader variableHeader = new MqttConnectVariableHeader(MqttVersion.MQTT_3_1.protocolName(),
-				MqttVersion.MQTT_3_1.protocolLevel(), true, true, false, 0, false, false, 10);
+		MqttConnectVariableHeader variableHeader = new MqttConnectVariableHeader(MqttVersion.MQTT_3_1_1.protocolName(),
+				MqttVersion.MQTT_3_1_1.protocolLevel(), true, true, false, 0, false, false, 10);
 
 		MqttConnectMessage connectMessage = new MqttConnectMessage(mqttFixedHeader, variableHeader,
 				new MqttConnectPayload(deviceId, null, null, username, password.getBytes()));
 		channel.writeAndFlush(connectMessage);
+		
+		if(logger.isDebugEnabled()) {
+			logger.debug("发送登录报文成功");
+		}
 	}
 
 	/**
@@ -157,7 +189,7 @@ public abstract class Controller {
 		if (isInit.get()) {
 			return;
 		}
-		
+
 		if (!isInit.compareAndSet(false, true)) {
 			return;
 		}

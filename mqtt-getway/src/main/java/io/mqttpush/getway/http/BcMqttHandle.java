@@ -11,8 +11,11 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.mqtt.*;
+import io.netty.handler.stream.ChunkedWriteHandler;
+
 import org.apache.log4j.Logger;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -47,6 +50,8 @@ public class BcMqttHandle extends ChannelInboundHandlerAdapter {
 
 		}
 	}
+	
+	
 
 	/**
 	 * 初始化连接的参数
@@ -139,6 +144,11 @@ public class BcMqttHandle extends ChannelInboundHandlerAdapter {
 				final ByteBuf httpContent = publishMessage.content();
 				channelFuture.addListener((ChannelFuture future) -> {
 					if (future.isSuccess()) {
+						
+				
+						
+						httpContent.retain();
+						
 						DefaultFullHttpRequest defaultFullHttpRequest = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1,
 								HttpMethod.POST, callback, httpContent);
 						defaultFullHttpRequest.headers().set(AbHttpHandle.CONTENT_TYPE, "application/json");
@@ -148,6 +158,15 @@ public class BcMqttHandle extends ChannelInboundHandlerAdapter {
 						 * http回调数+1
 						 */
 						Statistics.httpResCount.incrementAndGet();
+						
+						if(logger.isDebugEnabled()) {
+							
+							byte[] bs=new byte[httpContent.readableBytes()];
+							httpContent.readBytes(bs);
+							logger.debug("调用callback"+callback);
+							
+							logger.debug("content:"+new String(bs));
+						}
 					}
 				});
 			}else{
@@ -173,6 +192,10 @@ public class BcMqttHandle extends ChannelInboundHandlerAdapter {
 
 		while ((mqttPublishMessages = ControllBeans.mqttPublishMessages.poll()) != null) {
 			channel.write(mqttPublishMessages);
+		}
+		
+		if(logger.isDebugEnabled()) {
+			logger.debug("登录成功,http写入MQTT");
 		}
 
 		channel.flush();
