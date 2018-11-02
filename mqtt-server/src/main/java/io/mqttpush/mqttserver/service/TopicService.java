@@ -1,13 +1,5 @@
 package io.mqttpush.mqttserver.service;
 
-import java.security.SecureRandom;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiConsumer;
-
-import org.apache.log4j.Logger;
-
 import io.mqttpush.mqttserver.beans.ConstantBean;
 import io.mqttpush.mqttserver.beans.SendableMsg;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
@@ -16,6 +8,13 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.concurrent.UnorderedThreadPoolEventExecutor;
+import org.apache.log4j.Logger;
+
+import java.security.SecureRandom;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 
 /**
  * 维护订阅相主题关的信息的service
@@ -157,7 +156,10 @@ public class TopicService {
 	 */
 	public void channelsSend(String topicName, BiConsumer<String,MqttQoS> action) {
 		if(!devSubTopics.containsKey(topicName)){
-			logger.warn("发送失败，主题不存在");
+
+			if(logger.isDebugEnabled()){
+				logger.debug("发送失败，主题不存在");
+			}
 			return;
 		}
 
@@ -167,7 +169,7 @@ public class TopicService {
 	/**
 	 * 组发
 	 * @param topicName
-	 * @param publishMessage
+	 * @param sendableMsg
 	 */
 	public void channelsForGroup(String topicName, SendableMsg sendableMsg) {
 

@@ -5,8 +5,13 @@ import org.apache.log4j.Logger;
 import io.mqttpush.mqttserver.beans.ConstantBean;
 import io.mqttpush.mqttserver.beans.SendableMsg;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
+import io.mqttpush.mqttserver.exception.SendException.SendError;
 import io.mqttpush.mqttserver.service.ChannelUserService;
 import io.mqttpush.mqttserver.service.MessagePushService;
+import io.mqttpush.mqttserver.util.ByteBufEncodingUtil;
+import io.mqttpush.mqttserver.util.StashMessage;
+import io.mqttpush.mqttserver.util.AdminMessage.MessageType;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
@@ -143,6 +148,17 @@ public class PushServiceHandle extends AbstractHandle {
 					messagePushService.sendMsgForChannel(sendableMsg, toChannel,MqttQoS.EXACTLY_ONCE);
 					//点对点发送的时候会记录最后发送对端的设备id
 					channel.attr(ConstantBean.LASTSENT_DEVICEID).set(deviceId);
+				}else {
+					
+					/**
+					 * 如果不在线直接保存信息
+					 */
+					messagePushService.send2Admin( ByteBufEncodingUtil.getInatance()
+							.saveMQByteBuf(ByteBufAllocator.DEFAULT, System.currentTimeMillis(),
+									deviceId, sendableMsg.getContent()));
+					if(logger.isDebugEnabled()){
+						logger.debug(deviceId+"不在线,直接交给admin");
+					}
 				}
 		
 		}
