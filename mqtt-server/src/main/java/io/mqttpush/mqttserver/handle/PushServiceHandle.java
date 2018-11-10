@@ -212,7 +212,7 @@ public class PushServiceHandle extends AbstractHandle {
 		if (channel.hasAttr(ConstantBean.LASTSENT_KEY)) {
 			Attribute<SendableMsg> attribute = channel.attr(ConstantBean.LASTSENT_KEY);
 			if (attribute != null) {
-				//attribute.set(null);
+				attribute.set(null);
 			}
 
 		}
