@@ -1,10 +1,8 @@
 package io.mqttpush.mqttserver.beans;
 
 import java.io.Serializable;
-import java.util.Arrays;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 
 /**
  * 消息实体类
@@ -20,103 +18,53 @@ public class MsgRep implements  Serializable{
  * 消息id
  * 用消息体的hashcode获取
  */
-    private Integer messageid;
+    private Integer messageId;
     /**
      * 消息主题
      */
-    private String topname;
-    /**
-     * 发送方
-     */
-    private String sendiden;
-    /**
-     * 消息体
-     */
-    private byte[] content;
+    private String topName;
     
     /**
      * 消息的bytebuf 
      */
-    private ByteBuf byteBuf;
+    private ByteBuf msgContent;
     
     public MsgRep(){
     	
     }
 
-	public MsgRep(String topname, String sendiden, byte[] content) {
+
+	public MsgRep(Integer messageId, String topName, ByteBuf msgContent) {
 		super();
-		
-		this.messageid = content.hashCode();
-		this.topname = topname;
-		this.sendiden = sendiden;
-		this.content = content;
-		
-		
-		byteBuf=Unpooled.wrappedBuffer(content);
-	}
-	
-	public MsgRep(String topname, String sendiden, ByteBuf byteBuf) {
-		super();
-		this.messageid =byteBuf.hashCode();
-		this.topname = topname;
-		this.sendiden = sendiden;
-		this.byteBuf=byteBuf;
+		this.messageId = messageId;
+		this.topName = topName;
+		this.msgContent = msgContent;
 	}
 
-	public Integer getMessageid() {
-		return messageid;
+	public Integer getMessageId() {
+		return messageId;
 	}
 
-	public void setMessageid(Integer messageid) {
-		this.messageid = messageid;
+	public void setMessageId(Integer messageId) {
+		this.messageId = messageId;
 	}
 
-	public String getTopname() {
-		return topname;
+	public String getTopName() {
+		return topName;
 	}
 
-	public void setTopname(String topname) {
-		this.topname = topname;
+	public void setTopName(String topName) {
+		this.topName = topName;
 	}
 
-	public String getSendiden() {
-		return sendiden;
+
+	public ByteBuf getMsgContent() {
+		return msgContent;
 	}
 
-	public void setSendiden(String sendiden) {
-		this.sendiden = sendiden;
+
+	public void setMsgContent(ByteBuf msgContent) {
+		this.msgContent = msgContent;
 	}
 
-	public byte[] getContent() {
-		if(content==null){
-			byte[] bs=new byte[byteBuf.readableBytes()];
-			byteBuf.readBytes(bs);
-			return bs;
-		}
-		return content;
-	}
-
-	public void setContent(byte[] content) {
-		this.content = content;
-	}
-
-	public ByteBuf getByteBuf() {
-		return byteBuf;
-	}
-
-	public void setByteBuf(ByteBuf byteBuf) {
-		this.byteBuf = byteBuf;
-	}
-
-	@Override
-	public String toString() {
-		return "MsgRep [messageid=" + messageid + ", topname=" + topname + ", sendiden=" + sendiden + ", content="
-				+ Arrays.toString(content) + ", byteBuf=" + byteBuf + "]";
-	}
-    
-   
-    
-    
-   
-    
 }

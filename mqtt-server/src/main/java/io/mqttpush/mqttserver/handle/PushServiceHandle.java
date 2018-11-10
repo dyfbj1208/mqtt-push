@@ -62,11 +62,11 @@ public class PushServiceHandle extends AbstractHandle {
 				MqttPublishMessage messagepub = (MqttPublishMessage) msg;
 				pub(ctx, messagepub);
 				break;
-			case PUBREL: // 客户端发布释放
-				pubrel(ctx, message);
-				break;
 			case PUBREC:// 客户端发布收到
 				pubrec(ctx, message);
+				break;
+			case PUBREL: // 客户端发布释放
+				pubrel(ctx, message);
 				break;
 			case PUBCOMP:
 			case PUBACK:
@@ -112,7 +112,8 @@ public class PushServiceHandle extends AbstractHandle {
 
 		}
 		
-		SendableMsg sendableMsg = new SendableMsg(header.topicName(), channelUserService.deviceId(ctx.channel()),
+		SendableMsg sendableMsg = new SendableMsg(header.topicName(), 
+				channelUserService.deviceId(ctx.channel()),
 				messagepub.content());
 		/**
 		 * 添加消息的保留标志，一般来说，只有保留标志的消息才会被保存
@@ -133,7 +134,7 @@ public class PushServiceHandle extends AbstractHandle {
 	 */
 	private void ready2Send(SendableMsg sendableMsg,Channel channel) {
 		
-		String topicname=sendableMsg.getTopname();
+		String topicname=sendableMsg.getTopName();
 		
 		/**
 		 * 如果是点对点发送，直接从主题里面取出deviceid 发送
@@ -144,7 +145,7 @@ public class PushServiceHandle extends AbstractHandle {
 				
 				String deviceId=topicname.substring(ConstantBean.ONE2ONE_CHAT_PREFIX.length());
 				Channel toChannel=channelUserService.channel(deviceId);
-				if(toChannel!=null) {
+				if(toChannel!=null&&toChannel.isActive()) {
 					messagePushService.sendMsgForChannel(sendableMsg, toChannel,MqttQoS.EXACTLY_ONCE);
 					//点对点发送的时候会记录最后发送对端的设备id
 					channel.attr(ConstantBean.LASTSENT_DEVICEID).set(deviceId);
@@ -155,7 +156,7 @@ public class PushServiceHandle extends AbstractHandle {
 					 */
 					messagePushService.send2Admin( ByteBufEncodingUtil.getInatance()
 							.saveMQByteBuf(ByteBufAllocator.DEFAULT, System.currentTimeMillis(),
-									deviceId, sendableMsg.getContent()));
+									deviceId, sendableMsg.getMsgContent()));
 					if(logger.isDebugEnabled()){
 						logger.debug(deviceId+"不在线,直接交给admin");
 					}
@@ -178,20 +179,11 @@ public class PushServiceHandle extends AbstractHandle {
 
 		MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBCOMP, false, MqttQoS.EXACTLY_ONCE, false,
 				0);
+		;
 
 		MqttPubAckMessage ackMessage = new MqttPubAckMessage(fixedHeader,
 				MqttMessageIdVariableHeader.from(variableHeader.messageId()));
 		ctx.write(ackMessage);
-
-		Channel channel = ctx.channel();
-
-		if (channel.hasAttr(ConstantBean.LASTSENT_KEY)) {
-			Attribute<SendableMsg> attribute = channel.attr(ConstantBean.LASTSENT_KEY);
-			if (attribute != null) {
-				attribute.set(null);
-			}
-
-		}
 	}
 
 	/**
@@ -205,18 +197,25 @@ public class PushServiceHandle extends AbstractHandle {
 	 */
 	private void pubrec(final ChannelHandlerContext ctx, MqttMessage messagepub) {
 
+		
 		MqttMessageIdVariableHeader variableHeader = (MqttMessageIdVariableHeader) messagepub.variableHeader();
 
 		MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.EXACTLY_ONCE, false,
 				0);
-		;
 
 		MqttPubAckMessage ackMessage = new MqttPubAckMessage(fixedHeader,
 				MqttMessageIdVariableHeader.from(variableHeader.messageId()));
 		ctx.write(ackMessage);
 
-		
+		Channel channel = ctx.channel();
 
+		if (channel.hasAttr(ConstantBean.LASTSENT_KEY)) {
+			Attribute<SendableMsg> attribute = channel.attr(ConstantBean.LASTSENT_KEY);
+			if (attribute != null) {
+				//attribute.set(null);
+			}
+
+		}
 	}
 
 }

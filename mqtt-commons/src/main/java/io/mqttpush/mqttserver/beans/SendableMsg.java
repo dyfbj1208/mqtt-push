@@ -9,36 +9,29 @@ import io.netty.buffer.ByteBuf;
  */
 public class SendableMsg extends MsgRep{
 
-	
-	 /**
-	 * 
-	 */
 	private static final long serialVersionUID = -1043599050141437505L;
-	 
-
-
+	
+    /**
+     * 发送方
+     */
+    private String sendDeviceId;
+	
 	 /**
 	  * 保留标识
 	  */
-	 boolean  retain;
-	 
-	 /**
-	  * 重发标识
-	  */
-	 int  dupTimes;
-	 
-	 
-	 
-	
+	private  boolean  retain;
 
-	public SendableMsg(String topname, String sendclientid, ByteBuf msgContent) {
-		super(topname,sendclientid,msgContent);
-	}
+	/**
+	 * 重发次数
+	 */
+	private int dupTimes;
 	
-	public SendableMsg(String topname, String sendclientid, byte[] bs) {
-		super(topname,sendclientid,bs);
+	
+	byte[] bytesContent;
+	
+	public SendableMsg(String topname, String sendDeviceId, ByteBuf msgContent) {
+		super(msgContent.hashCode(), topname, msgContent);
 	}
-
 
 	public boolean isRetain() {
 		return retain;
@@ -49,13 +42,37 @@ public class SendableMsg extends MsgRep{
 		this.retain = retain;
 	}
 
+	public String getSendDeviceId() {
+		return sendDeviceId;
+	}
+
+	public void setSendDeviceId(String sendDeviceId) {
+		this.sendDeviceId = sendDeviceId;
+	}
 
 	public int getDupTimes() {
 		return dupTimes;
 	}
 
-
 	public void setDupTimes(int dupTimes) {
 		this.dupTimes = dupTimes;
+	}
+
+	public byte[] getByteForContent() {
+		
+		
+		if(bytesContent!=null) {
+			return bytesContent;
+		}
+		ByteBuf msgContent=getMsgContent();
+		if(msgContent==null||msgContent.refCnt()<=0) {
+			return null;
+		}
+		
+		msgContent.resetReaderIndex();
+		bytesContent=new byte[msgContent.readableBytes()];
+		msgContent.readBytes(bytesContent);
+		msgContent.resetReaderIndex();
+		return  bytesContent;
 	}
 }

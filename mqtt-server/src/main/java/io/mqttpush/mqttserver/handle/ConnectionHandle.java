@@ -6,6 +6,7 @@ import io.mqttpush.mqttserver.beans.ServiceBeans;
 import io.mqttpush.mqttserver.service.ChannelUserService;
 import io.mqttpush.mqttserver.service.CheckUserService;
 import io.mqttpush.mqttserver.service.MessagePushService;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttConnAckMessage;
@@ -145,9 +146,16 @@ public class ConnectionHandle extends AbstractHandle {
 		 */
 		if(channel.hasAttr(ConstantBean.LASTSENT_KEY)) {	
 			
+			
+			/**
+			 * 凡是传输都是 bytebuff, 凡是占存都是 byte[];
+			 */
 			SendableMsg sendableMsg=null;
 			Attribute<SendableMsg> attribute=channel.attr(ConstantBean.LASTSENT_KEY);
 			if(attribute!=null&&(sendableMsg=attribute.get())!=null) {
+				if(sendableMsg.getByteForContent()!=null){
+					sendableMsg.setMsgContent(Unpooled.wrappedBuffer(sendableMsg.getByteForContent()));
+				}
 				messagePushService.sendMsgForChannel(sendableMsg,channel,MqttQoS.EXACTLY_ONCE);
 			}
 		}

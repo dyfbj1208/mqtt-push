@@ -82,7 +82,7 @@ public class ByteBufEncodingUtil {
 	 * @param content
 	 * @return
 	 */
-	public ByteBuf stashMQByteBuf(ByteBufAllocator allocator,Long timestamp,String deviceId,byte[] content) {
+	public ByteBuf stashMQByteBuf(ByteBufAllocator allocator,Long timestamp,String deviceId,ByteBuf content) {
 		
 		 ByteBuf buf=allocator.buffer();
 		 buf.writeByte(prefixchars[2]);
@@ -104,7 +104,7 @@ public class ByteBufEncodingUtil {
 	 * @param content
 	 * @return
 	 */
-	public ByteBuf saveMQByteBuf(ByteBufAllocator allocator,Long timestamp,String deviceId,byte[] content) {
+	public ByteBuf saveMQByteBuf(ByteBufAllocator allocator,Long timestamp,String deviceId,ByteBuf content) {
 		
 		 ByteBuf buf=allocator.buffer();
 		 buf.writeByte(prefixchars[3]);
@@ -185,42 +185,18 @@ public class ByteBufEncodingUtil {
 	
 	public static void main(String[] args) {
 		
-		
-//		ByteBuf buf=PackatUtil.getInatance().offlineBytebuf(ByteBufAllocator.DEFAULT, "1111");
-//		buf.readableBytes();
-//		System.out.println((char)buf.readByte());
-//		
-//		
-//		byte []bs =new byte[buf.readableBytes()];
-//		buf.readBytes(bs);
-//		System.out.println(new String(bs));
+
+		ByteBufEncodingUtil bufEncodingUtil=ByteBufEncodingUtil.getInatance();
 		
 		
-//		ByteBuf buf=ByteBufEncodingUtil.getInatance().
-//				stashMQByteBuf(ByteBufAllocator.DEFAULT, System.currentTimeMillis(), "111", new byte[] {1,2,34,56});
-//		
-//		
-//		
-//		System.out.println((char)buf.readByte());
-//		
-//		System.out.println(buf.readLong());
-//		
-//		int strlen=buf.readInt();
-//		
-//		byte[] bs=new byte[strlen];
-//		buf.readBytes(bs);
-//		System.out.println(new String(bs));
-//		
-//		bs=new byte[buf.readableBytes()];
-//		
-//		System.out.println(bs.length);
+		ByteBuf content=ByteBufAllocator.DEFAULT.buffer();
+		content.writeBytes("nihao".getBytes());
+		ByteBuf buf=	bufEncodingUtil.saveMQByteBuf(ByteBufAllocator.DEFAULT, System.currentTimeMillis(), "11111", content);
 		
-		ByteBufAllocator allocator= ByteBufAllocator.DEFAULT;
 		
-		ByteBuf buf=ByteBufEncodingUtil.getInatance().offlineBytebuf(allocator, "1111", "asda");
+		Object o= bufEncodingUtil.dencoding(buf);
 		
-		buf.resetReaderIndex();
-		System.out.println( ByteBufEncodingUtil.getInatance().dencoding(buf));
+		System.out.println(o);
 		
 	}
 	
