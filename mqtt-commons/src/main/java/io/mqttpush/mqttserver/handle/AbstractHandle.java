@@ -36,7 +36,7 @@ public abstract  class AbstractHandle extends ChannelInboundHandlerAdapter imple
 					||(!channel.attr(ConstantBean.loginKey).get())) {				
 				channel.close();
 				if(logger.isDebugEnabled()) {
-					logger.debug("关闭未登录的超时channel");
+					logger.debug("关闭未登录的超时channel"+channel.remoteAddress());
 				}
 			}
 		}, defaultwaittime, TimeUnit.SECONDS);

@@ -156,9 +156,6 @@ public class AbWebSocketHandler extends ChannelInboundHandlerAdapter {
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
 		
-		Channel abchannel= ctx.channel();
-		
-		aBChannelClose(abchannel);
 		logger.warn("异常",cause);
 	}
 

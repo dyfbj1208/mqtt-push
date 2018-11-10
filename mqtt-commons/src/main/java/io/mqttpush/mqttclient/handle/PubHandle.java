@@ -1,6 +1,9 @@
 package io.mqttpush.mqttclient.handle;
 
 import io.mqttpush.mqttclient.service.MessageListener;
+import io.mqttpush.mqttserver.beans.ConstantBean;
+import io.mqttpush.mqttserver.beans.SendableMsg;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
@@ -11,19 +14,19 @@ import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.util.Attribute;
 import io.netty.util.ReferenceCountUtil;
-
 
 /**
  * 发布消息相关的处理
+ * 
  * @author tianzhenjiu
  *
  */
 public class PubHandle extends ChannelInboundHandlerAdapter {
-	
+
 	MessageListener messageListener;
-	
-	
+
 	public PubHandle(MessageListener messageListener) {
 		super();
 		this.messageListener = messageListener;
@@ -41,11 +44,11 @@ public class PubHandle extends ChannelInboundHandlerAdapter {
 				MqttPublishMessage messagepub = (MqttPublishMessage) msg;
 				pub(ctx, messagepub);
 				break;
-			case PUBREL: // 客户端发布释放
-				pubrel(ctx, message);
-				break;
 			case PUBREC:// 客户端发布收到
 				pubrec(ctx, message);
+				break;
+			case PUBREL: // 客户端发布释放
+				pubrel(ctx, message);
 				break;
 			case PUBCOMP:
 			case PUBACK:
@@ -91,19 +94,16 @@ public class PubHandle extends ChannelInboundHandlerAdapter {
 
 		MqttMessageIdVariableHeader variableHeader = (MqttMessageIdVariableHeader) messagepub.variableHeader();
 
-		MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBCOMP, false, MqttQoS.EXACTLY_ONCE, false,
+		MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBCOMP, false, MqttQoS.AT_LEAST_ONCE, false,
 				0);
-
+		
 		MqttPubAckMessage ackMessage = new MqttPubAckMessage(fixedHeader,
 				MqttMessageIdVariableHeader.from(variableHeader.messageId()));
 		ctx.writeAndFlush(ackMessage);
 	}
 
 	/**
-	 *  case PUBREL:
-     *	case SUBSCRIBE:
-     *      case UNSUBSCRIBE:必须为
-	 * 处理客户端 发布收到AT_LEAST_ONCE
+	 * 处理客户端 发布收到
 	 * 
 	 * 对客户端发送发布释放 根据 客户端收到的messageid 找到相应的message 并且 存储到消息记录里面 现在的 客户端标识是 接受方的
 	 * 现在的messageid是数据库里面的主键id 最后移除重发队列 防止消息重发
@@ -117,9 +117,10 @@ public class PubHandle extends ChannelInboundHandlerAdapter {
 
 		MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_LEAST_ONCE, false,
 				0);
+
 		MqttPubAckMessage ackMessage = new MqttPubAckMessage(fixedHeader,
 				MqttMessageIdVariableHeader.from(variableHeader.messageId()));
 		ctx.writeAndFlush(ackMessage);
-
 	}
+
 }
