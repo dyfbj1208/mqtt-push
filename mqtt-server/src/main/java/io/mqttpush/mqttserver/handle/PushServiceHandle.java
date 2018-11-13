@@ -95,19 +95,21 @@ public class PushServiceHandle extends AbstractHandle {
 
 		MqttFixedHeader fixedHeader = null;
 		MqttPublishVariableHeader header = messagepub.variableHeader();
-		int ackmsgid = header.packetId();
-
+		
+		
 		switch (mqttQoS) {
 		case EXACTLY_ONCE:
 			fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.EXACTLY_ONCE, false, 0);
-			MqttMessageIdVariableHeader connectVariableHeader = MqttMessageIdVariableHeader.from(ackmsgid);
+			MqttMessageIdVariableHeader connectVariableHeader = MqttMessageIdVariableHeader.from( header.packetId());
 			MqttPubAckMessage ackMessage = new MqttPubAckMessage(fixedHeader, connectVariableHeader);
 			ctx.write(ackMessage);
 			break;
-		default:
-			fixedHeader = new MqttFixedHeader(MqttMessageType.PUBACK, false, mqttQoS, false, 0);
+		case AT_LEAST_ONCE:
+			fixedHeader = new MqttFixedHeader(MqttMessageType.PUBACK, false, MqttQoS.AT_LEAST_ONCE, false, 0);
 			MqttMessage message = new MqttMessage(fixedHeader);
 			ctx.write(message);
+			break;
+		default:
 			break;
 
 		}
@@ -120,7 +122,7 @@ public class PushServiceHandle extends AbstractHandle {
 		 */
 		sendableMsg.setRetain(messagepub.fixedHeader().isRetain());
 		
-		ready2Send(sendableMsg,ctx.channel());
+		ready2Send(sendableMsg,ctx.channel(),mqttQoS);
 
 	}
 
@@ -132,7 +134,7 @@ public class PushServiceHandle extends AbstractHandle {
 	 * @param messageid
 	 * @param content
 	 */
-	private void ready2Send(SendableMsg sendableMsg,Channel channel) {
+	private void ready2Send(SendableMsg sendableMsg,Channel channel,MqttQoS mqttQoS) {
 		
 		String topicname=sendableMsg.getTopName();
 		
@@ -146,7 +148,7 @@ public class PushServiceHandle extends AbstractHandle {
 				String deviceId=topicname.substring(ConstantBean.ONE2ONE_CHAT_PREFIX.length());
 				Channel toChannel=channelUserService.channel(deviceId);
 				if(toChannel!=null&&toChannel.isActive()) {
-					messagePushService.sendMsgForChannel(sendableMsg, toChannel,MqttQoS.EXACTLY_ONCE);
+					messagePushService.sendMsgForChannel(sendableMsg, toChannel,mqttQoS);
 					//点对点发送的时候会记录最后发送对端的设备id
 					channel.attr(ConstantBean.LASTSENT_DEVICEID).set(deviceId);
 				}else {
@@ -177,9 +179,9 @@ public class PushServiceHandle extends AbstractHandle {
 
 		MqttMessageIdVariableHeader variableHeader = (MqttMessageIdVariableHeader) messagepub.variableHeader();
 
-		MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBCOMP, false, MqttQoS.EXACTLY_ONCE, false,
+		MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBCOMP, false, MqttQoS.AT_LEAST_ONCE, false,
 				0);
-		;
+		
 
 		MqttPubAckMessage ackMessage = new MqttPubAckMessage(fixedHeader,
 				MqttMessageIdVariableHeader.from(variableHeader.messageId()));
@@ -200,7 +202,7 @@ public class PushServiceHandle extends AbstractHandle {
 		
 		MqttMessageIdVariableHeader variableHeader = (MqttMessageIdVariableHeader) messagepub.variableHeader();
 
-		MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.EXACTLY_ONCE, false,
+		MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_LEAST_ONCE, false,
 				0);
 
 		MqttPubAckMessage ackMessage = new MqttPubAckMessage(fixedHeader,

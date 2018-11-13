@@ -195,7 +195,8 @@ public class MessagePushService {
 			}
 		}
 
-		if (qosLevel == MqttQoS.EXACTLY_ONCE) {
+		if (qosLevel == MqttQoS.EXACTLY_ONCE
+				||qosLevel==MqttQoS.AT_LEAST_ONCE) {
 			sendableMsg.setDupTimes(sendableMsg.getDupTimes() + 1);
 			channel.attr(ConstantBean.LASTSENT_KEY).set(sendableMsg);
 
@@ -230,6 +231,12 @@ public class MessagePushService {
 	 */
 	public void handleAndStash(StashMessage stashMessage, SendError error) {
 
+		String deviceId=stashMessage.getDeviceId();
+		
+		if(channelUserService.isAdmin(deviceId)) {
+			logger.warn("注意，是否admin已经离线?");
+			return;
+		}
 		
 		if(stashMessage==null||stashMessage.getContent()==null) {
 			return;

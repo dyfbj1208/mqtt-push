@@ -155,11 +155,7 @@ public class TopicService {
 	 * @param action
 	 */
 	public void channelsSend(String topicName, BiConsumer<String,MqttQoS> action) {
-		if(!devSubTopics.containsKey(topicName)){
-
-			if(logger.isDebugEnabled()){
-				logger.debug("发送失败，主题不存在");
-			}
+		if(!devSubTopics.containsKey(topicName)) {
 			return;
 		}
 

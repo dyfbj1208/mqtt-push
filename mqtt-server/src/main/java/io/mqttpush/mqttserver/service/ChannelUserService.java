@@ -90,20 +90,6 @@ public class ChannelUserService {
 				 * 算了，直接关闭了拉到
 				 * 
 				 */
-//				MqttFixedHeader fixedHeader=new MqttFixedHeader(
-//						MqttMessageType.DISCONNECT, 
-//						false,
-//						MqttQoS.AT_MOST_ONCE, false, 0);
-//				MqttMessage dismessage=new MqttMessage(fixedHeader);
-//				ChannelFuture channelFuture=channel2.writeAndFlush(dismessage);
-//				channelFuture.addListener(new GenericFutureListener<Future<Void>>() {
-//					@Override
-//					public void operationComplete(Future<Void> future) throws Exception {
-//						channel2.close();
-//					}
-//					
-//				});
-
 				channel2.close();
 				
 				
@@ -112,7 +98,13 @@ public class ChannelUserService {
 			channel.attr(ConstantBean.loginKey).set(true);
 			
 			ByteBufEncodingUtil bufEncodingUtil=ByteBufEncodingUtil.getInatance();
-			getmessagePushService().send2Admin(bufEncodingUtil.onlineBytebuf(channel.alloc(), deviceId));
+			if(isAdmin(deviceId)) {
+				if(logger.isDebugEnabled()) {
+					logger.debug("admin上线"+channel.remoteAddress());
+				}
+			}else {
+				getmessagePushService().send2Admin(bufEncodingUtil.onlineBytebuf(channel.alloc(), deviceId));
+			}
 			
 		}
 		if(logger.isDebugEnabled()) {
@@ -167,6 +159,16 @@ public class ChannelUserService {
 		return str2channel.get(deviceId);
 	}
 	
+	
+	/**
+	 * 判断这个设备是不是admin
+	 * @param deviceId
+	 * @return
+	 */
+	public boolean isAdmin(String deviceId) {
+		
+		 return deviceId.startsWith("admin");
+	}
 	
 	MessagePushService getmessagePushService() {
 		
