@@ -87,12 +87,9 @@ public class BcMqttHandle extends ChannelInboundHandlerAdapter {
 				break;
 			}
 		} else if (msg instanceof MqttPublishMessage) {
-
+			
 			MqttPublishMessage publishMessage = (MqttPublishMessage) msg;
-			MqttPubAckMessage ackMessage = new MqttPubAckMessage(
-					new MqttFixedHeader(MqttMessageType.PUBACK, false, MqttQoS.AT_LEAST_ONCE, false, 0),
-					MqttMessageIdVariableHeader.from(publishMessage.variableHeader().packetId()));
-			ctx.writeAndFlush(ackMessage);
+			replay(publishMessage,ctx);
 
 			callbackMessage(ctx.channel(), publishMessage);
 
@@ -102,6 +99,43 @@ public class BcMqttHandle extends ChannelInboundHandlerAdapter {
 
 	}
 
+	
+	/**
+	 * 回复
+	 * @param publishMessage
+	 * @param ctx
+	 */
+	void replay(MqttPublishMessage publishMessage,ChannelHandlerContext ctx) {
+		
+	
+		
+		try {
+			MqttPubAckMessage replMessage=null;
+			MqttQoS mqttQoS=publishMessage.fixedHeader().qosLevel();
+			
+			if(mqttQoS.equals(MqttQoS.EXACTLY_ONCE)) {
+				
+				replMessage= new MqttPubAckMessage(
+						new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.AT_LEAST_ONCE, false, 0),
+						MqttMessageIdVariableHeader.from(publishMessage.variableHeader().packetId()));
+			
+				
+			}else if(mqttQoS.equals(MqttQoS.AT_LEAST_ONCE)) {
+				
+				replMessage= new MqttPubAckMessage(
+						new MqttFixedHeader(MqttMessageType.PUBACK, false, MqttQoS.AT_LEAST_ONCE, false, 0),
+						MqttMessageIdVariableHeader.from(publishMessage.variableHeader().packetId()));
+			}
+			
+			
+			if(replMessage!=null) {
+				ctx.writeAndFlush(replMessage);
+			}
+		} catch (Exception e) {
+				logger.warn("回复异常",e);
+		}
+	}
+	
 	/**
 	 * 回调http 接口消息
 	 * 
