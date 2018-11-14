@@ -29,7 +29,6 @@ import io.netty.util.Attribute;
 
 public class ConnectionHandle extends AbstractHandle {
 
-	
 	/**
 	 * 校验用户是否可以登录
 	 */
@@ -40,20 +39,17 @@ public class ConnectionHandle extends AbstractHandle {
 	 */
 	ChannelUserService channelUserService;
 
-	
-	
 	MessagePushService messagePushService;
-	
 
 	public ConnectionHandle() {
 		super();
-		
-		ServiceBeans serviceBeans=ServiceBeans.getInstance();
-		
-		channelUserService = serviceBeans.getChannelUserService();
-		checkUserService =serviceBeans.getCheckUserService();
 
-		messagePushService=serviceBeans.getMessagePushService();
+		ServiceBeans serviceBeans = ServiceBeans.getInstance();
+
+		channelUserService = serviceBeans.getChannelUserService();
+		checkUserService = serviceBeans.getCheckUserService();
+
+		messagePushService = serviceBeans.getMessagePushService();
 	}
 
 	@Override
@@ -109,17 +105,16 @@ public class ConnectionHandle extends AbstractHandle {
 		String deviceId = connectPayload.clientIdentifier();
 		Channel channel = ctx.channel();
 
-
 		if ((returnCode = checkUserService.checkUserReturnCode(connectPayload.userName(),
 				connectPayload.password())) == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
-				channelUserService.processLoginSuccess(deviceId, channel);
+			channelUserService.processLoginSuccess(deviceId, channel);
 		}
 
 		if (returnCode != null) {
-			
-			MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false,
-					0);
-			
+
+			MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE,
+					false, 0);
+
 			connectVariableHeader = new MqttConnAckVariableHeader(returnCode, false);
 			MqttConnAckMessage mqttConnAckMessage = new MqttConnAckMessage(fixedHeader, connectVariableHeader);
 
@@ -138,25 +133,27 @@ public class ConnectionHandle extends AbstractHandle {
 
 		ctx.write(
 				new MqttMessage(new MqttFixedHeader(MqttMessageType.PINGRESP, false, MqttQoS.AT_MOST_ONCE, false, 0)));
-		
-		
-		Channel channel=ctx.channel();
+
+		Channel channel = ctx.channel();
 		/**
 		 * 当心跳上来了检测到没用发送的成功接收到的消息
 		 */
-		if(channel.hasAttr(ConstantBean.LASTSENT_KEY)) {	
-			
-			
+		if (channel.hasAttr(ConstantBean.UnConfirmedKey)) {
+
 			/**
 			 * 凡是传输都是 bytebuff, 凡是占存都是 byte[];
 			 */
-			SendableMsg sendableMsg=null;
-			Attribute<SendableMsg> attribute=channel.attr(ConstantBean.LASTSENT_KEY);
-			if(attribute!=null&&(sendableMsg=attribute.get())!=null) {
-				if(sendableMsg.getByteForContent()!=null){
+			SendableMsg sendableMsg = null;
+			Attribute<SendableMsg> attribute = channel.attr(ConstantBean.UnConfirmedKey);
+			if (attribute != null && (sendableMsg = attribute.get()) != null) {
+				if (sendableMsg.getByteForContent() != null) {
 					sendableMsg.setMsgContent(Unpooled.wrappedBuffer(sendableMsg.getByteForContent()));
 				}
-				messagePushService.sendMsgForChannel(sendableMsg,channel,MqttQoS.EXACTLY_ONCE);
+				messagePushService.sendMsgForChannel(sendableMsg, channel, MqttQoS.EXACTLY_ONCE);
+				if (logger.isDebugEnabled()) {
+					logger.debug("重发消息" + sendableMsg.getMessageId() + "->" + sendableMsg.getSendDeviceId() + ":"
+							+ sendableMsg.getTopName());
+				}
 			}
 		}
 	}

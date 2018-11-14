@@ -55,21 +55,23 @@ public class PushServiceHandle extends AbstractHandle {
 		if (msg instanceof MqttMessage) {
 
 			MqttMessage message = (MqttMessage) msg;
-			MqttMessageType messageType = message.fixedHeader().messageType();
+			MqttFixedHeader fixedHeader=message.fixedHeader();
+			MqttMessageType messageType = fixedHeader.messageType();
 
 			switch (messageType) {
 			case PUBLISH:// 客户端发布普通消息
 				MqttPublishMessage messagepub = (MqttPublishMessage) msg;
 				pub(ctx, messagepub);
 				break;
+			case PUBACK://对于QOS=1和QOS=2收到回复报文之后都是相同的处理
 			case PUBREC:// 客户端发布收到
-				pubrec(ctx, message);
+				pubrec(ctx, message,fixedHeader.qosLevel());
 				break;
 			case PUBREL: // 客户端发布释放
 				pubrel(ctx, message);
 				break;
 			case PUBCOMP:
-			case PUBACK:
+			
 				ReferenceCountUtil.release(message);
 				break;
 			default:
@@ -197,26 +199,34 @@ public class PushServiceHandle extends AbstractHandle {
 	 * @param ctx
 	 * @param messagepub
 	 */
-	private void pubrec(final ChannelHandlerContext ctx, MqttMessage messagepub) {
+	private void pubrec(final ChannelHandlerContext ctx, MqttMessage messagepub,MqttQoS mqttQoS) {
 
 		
-		MqttMessageIdVariableHeader variableHeader = (MqttMessageIdVariableHeader) messagepub.variableHeader();
+		/**
+		 * 如果是qos=2的还需要发消息释放的报文
+		 */
+		if(mqttQoS.equals(MqttQoS.EXACTLY_ONCE)) {
+			MqttMessageIdVariableHeader variableHeader = (MqttMessageIdVariableHeader) messagepub.variableHeader();
 
-		MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_LEAST_ONCE, false,
-				0);
+			MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_LEAST_ONCE, false,
+					0);
 
-		MqttPubAckMessage ackMessage = new MqttPubAckMessage(fixedHeader,
-				MqttMessageIdVariableHeader.from(variableHeader.messageId()));
-		ctx.write(ackMessage);
+			MqttPubAckMessage ackMessage = new MqttPubAckMessage(fixedHeader,
+					MqttMessageIdVariableHeader.from(variableHeader.messageId()));
+			ctx.write(ackMessage);
+		}
 
 		Channel channel = ctx.channel();
 
-		if (channel.hasAttr(ConstantBean.LASTSENT_KEY)) {
-			Attribute<SendableMsg> attribute = channel.attr(ConstantBean.LASTSENT_KEY);
+		if (channel.hasAttr(ConstantBean.UnConfirmedKey)) {
+			Attribute<SendableMsg> attribute = channel.attr(ConstantBean.UnConfirmedKey);
 			if (attribute != null) {
 				attribute.set(null);
 			}
 
+			if(logger.isDebugEnabled()) {
+				logger.debug("收到确认报文，将会删除消息");
+			}
 		}
 	}
 

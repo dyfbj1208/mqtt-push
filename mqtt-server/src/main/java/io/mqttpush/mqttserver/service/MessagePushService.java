@@ -139,7 +139,7 @@ public class MessagePushService {
 	protected ChannelFuture sendMsg(SendableMsg sendableMsg, Channel channel, String deviceId, MqttQoS mqttQoS) {
 
 		ByteBuf sendBuf = sendableMsg.getMsgContent();
-		Attribute<SendableMsg> attribute = channel.attr(ConstantBean.LASTSENT_KEY);
+		Attribute<SendableMsg> attribute = channel.attr(ConstantBean.UnConfirmedKey);
 		
 		if (channel == null || !channel.isActive()) {
 			return channel.newFailedFuture(new SendException(SendError.CHANNEL_OFF));
@@ -150,7 +150,7 @@ public class MessagePushService {
 			/**
 			 * 当超过最大次数以后就清楚了重发机制
 			 */
-			channel.attr(ConstantBean.LASTSENT_KEY).set(null);
+			channel.attr(ConstantBean.UnConfirmedKey).set(null);
 			return channel.newFailedFuture(new SendException(SendError.FAIL_MAX_COUNT));
 		}
 
@@ -179,7 +179,7 @@ public class MessagePushService {
 		/**
 		 * 保证通道里面只有一个待发消息。 如果有其他待发消息就发给admin 处理
 		 */
-		if (channel.hasAttr(ConstantBean.LASTSENT_KEY)) {
+		if (channel.hasAttr(ConstantBean.UnConfirmedKey)) {
 
 			SendableMsg oldsendableMsg=null;
 		
@@ -191,14 +191,14 @@ public class MessagePushService {
 				/**
 				 * 清楚原有的send对象
 				 */
-				channel.attr(ConstantBean.LASTSENT_KEY).set(null);
+				channel.attr(ConstantBean.UnConfirmedKey).set(null);
 			}
 		}
 
 		if (qosLevel == MqttQoS.EXACTLY_ONCE
 				||qosLevel==MqttQoS.AT_LEAST_ONCE) {
 			sendableMsg.setDupTimes(sendableMsg.getDupTimes() + 1);
-			channel.attr(ConstantBean.LASTSENT_KEY).set(sendableMsg);
+			channel.attr(ConstantBean.UnConfirmedKey).set(sendableMsg);
 
 		}
 

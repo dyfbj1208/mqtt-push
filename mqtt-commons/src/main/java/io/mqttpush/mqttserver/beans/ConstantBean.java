@@ -1,5 +1,7 @@
 package io.mqttpush.mqttserver.beans;
 
+import java.util.Map;
+
 import io.netty.util.AttributeKey;
 
 /**
@@ -11,9 +13,9 @@ public class ConstantBean {
 
 	
 	/**
-	 * channel 获取最后一个发送的消息对象
+	 * channel中的未确认报文 只会保存八个未确认报文
 	 */
-	public static final AttributeKey<SendableMsg> LASTSENT_KEY = AttributeKey.valueOf("lastsent");
+	public static final AttributeKey<SendableMsg> UnConfirmedKey = AttributeKey.valueOf("lastsent");
 	
 	
 	public static final AttributeKey<String> LASTSENT_DEVICEID = AttributeKey.valueOf("lastSendDeviceId");
