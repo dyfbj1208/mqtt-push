@@ -112,9 +112,7 @@ public class ChannelUserService {
 		
 			
 		}
-		if(logger.isDebugEnabled()) {
-			logger.debug(deviceId + "登录成功,在线人数\t" + str2channel.size());
-		}
+		
 
 	}
 	
@@ -126,7 +124,7 @@ public class ChannelUserService {
 	private void registerAndNotice(Channel channel,String deviceId) {
 		
 		channel.attr(ConstantBean.deviceKey).set(deviceId);
-		channel.attr(ConstantBean.loginKey).set(true);
+		channel.attr(ConstantBean.loginKey).set(Boolean.TRUE);
 		
 		ByteBufEncodingUtil bufEncodingUtil=ByteBufEncodingUtil.getInatance();
 		if(isAdmin(deviceId)) {
@@ -137,6 +135,9 @@ public class ChannelUserService {
 			getmessagePushService().send2Admin(bufEncodingUtil.onlineBytebuf(channel.alloc(), deviceId));
 		}
 		
+		if(logger.isDebugEnabled()) {
+			logger.debug(deviceId + "登录成功,在线人数\t" + str2channel.size());
+		}
 	}
 
 	/**
