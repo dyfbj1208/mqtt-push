@@ -97,8 +97,8 @@ public class PushServiceHandle extends AbstractHandle {
 
 		MqttFixedHeader fixedHeader = null;
 		MqttPublishVariableHeader header = messagepub.variableHeader();
+
 		
-		System.out.println(8/0);
 		switch (mqttQoS) {
 		case EXACTLY_ONCE:
 			fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.EXACTLY_ONCE, false, 0);
