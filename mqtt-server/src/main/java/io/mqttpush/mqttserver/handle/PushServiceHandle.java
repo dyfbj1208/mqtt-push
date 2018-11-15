@@ -98,7 +98,7 @@ public class PushServiceHandle extends AbstractHandle {
 		MqttFixedHeader fixedHeader = null;
 		MqttPublishVariableHeader header = messagepub.variableHeader();
 		
-		
+		System.out.println(8/0);
 		switch (mqttQoS) {
 		case EXACTLY_ONCE:
 			fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.EXACTLY_ONCE, false, 0);
@@ -225,7 +225,7 @@ public class PushServiceHandle extends AbstractHandle {
 			}
 
 			if(logger.isDebugEnabled()) {
-				logger.debug("收到确认报文，将会删除消息");
+				logger.debug(channelUserService.deviceId(channel)+"收到确认报文，将会删除消息");
 			}
 		}
 	}

@@ -8,6 +8,7 @@ import io.mqttpush.mqttserver.beans.ConstantBean;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
 import io.mqttpush.mqttserver.util.ByteBufEncodingUtil;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.util.AttributeKey;
 
 /**
@@ -44,15 +45,16 @@ public class ChannelUserService {
 			
 			synchronized (deviceId) {
 				
-				if (deviceId != null && str2channel.containsKey(deviceId)){
+				
+				if (str2channel.containsKey(deviceId)){
 					if(str2channel.get(deviceId)==channel){
 						str2channel.remove(deviceId);
 					}
+				}else {
+					logger.info(deviceId+"已经关闭，难道是触发了两次关闭?");
+					return;
 				}
-				
-				if(channel.isActive())
-					channel.close();
-			
+	
 				 String lastDeviceId=null;
 				 if(channel.hasAttr(ConstantBean.LASTSENT_DEVICEID)) {
 					 lastDeviceId=channel.attr(ConstantBean.LASTSENT_DEVICEID).get();
@@ -82,35 +84,59 @@ public class ChannelUserService {
 		
 		synchronized (deviceId) {
 			
-			final Channel channel2 =  str2channel.put(deviceId, channel);
-			if (channel2 != null) {
+			final Channel channelOld =  str2channel.put(deviceId, channel);
+			ChannelFuture channelFuture=null;
+			if (channelOld != null) {
 				
 				/**
 				 * 
 				 * 算了，直接关闭了拉到
 				 * 
 				 */
-				channel2.close();
+				channelFuture=channelOld.close();
+				channelFuture.addListener((ChannelFuture closeFuture)->{
+					
+					 if(closeFuture.isSuccess()) {
+						 registerAndNotice(channelOld, deviceId);
+					 }else {
+						 logger.error("旧的关闭失败，新的也不能上线");
+					 }
+					
+				});
 				
 				
-			}
-			channel.attr(ConstantBean.deviceKey).set(deviceId);
-			channel.attr(ConstantBean.loginKey).set(true);
-			
-			ByteBufEncodingUtil bufEncodingUtil=ByteBufEncodingUtil.getInatance();
-			if(isAdmin(deviceId)) {
-				if(logger.isDebugEnabled()) {
-					logger.debug("admin上线"+channel.remoteAddress());
-				}
 			}else {
-				getmessagePushService().send2Admin(bufEncodingUtil.onlineBytebuf(channel.alloc(), deviceId));
+				registerAndNotice(channel, deviceId);
 			}
+			
+		
 			
 		}
 		if(logger.isDebugEnabled()) {
 			logger.debug(deviceId + "登录成功,在线人数\t" + str2channel.size());
 		}
 
+	}
+	
+	/**
+	 * 注册并且发送通知
+	 * @param channel
+	 * @param deviceId
+	 */
+	private void registerAndNotice(Channel channel,String deviceId) {
+		
+		channel.attr(ConstantBean.deviceKey).set(deviceId);
+		channel.attr(ConstantBean.loginKey).set(true);
+		
+		ByteBufEncodingUtil bufEncodingUtil=ByteBufEncodingUtil.getInatance();
+		if(isAdmin(deviceId)) {
+			if(logger.isDebugEnabled()) {
+				logger.debug("admin上线"+channel.remoteAddress());
+			}
+		}else {
+			getmessagePushService().send2Admin(bufEncodingUtil.onlineBytebuf(channel.alloc(), deviceId));
+		}
+		
 	}
 
 	/**

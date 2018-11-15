@@ -63,9 +63,11 @@ public class MessagePushService {
 					sendMsgForChannel(sendableMsg, channel, mqttQos);
 				} catch (Exception e) {
 					isfail = true;
+					logger.warn("发送"+deviceId+"失败",e);
 				}
 			} else {
 				isfail = true;
+				logger.warn("设备"+deviceId+"通道关闭");
 			}
 
 			/**
