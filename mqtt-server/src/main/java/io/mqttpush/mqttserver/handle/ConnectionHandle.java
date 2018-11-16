@@ -151,7 +151,7 @@ public class ConnectionHandle extends AbstractHandle {
 				}
 				messagePushService.sendMsgForChannel(sendableMsg, channel, MqttQoS.EXACTLY_ONCE);
 				if (logger.isDebugEnabled()) {
-					logger.debug("重发消息" + sendableMsg.getMessageId() + "->" + sendableMsg.getSendDeviceId() + ":"
+					logger.debug("重发消息->" + sendableMsg.getSendDeviceId() + ":"
 							+ sendableMsg.getTopName());
 				}
 			}

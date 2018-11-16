@@ -97,7 +97,7 @@ public class ChannelUserService {
 				channelFuture.addListener((ChannelFuture closeFuture)->{
 					
 					 if(closeFuture.isSuccess()) {
-						 registerAndNotice(channelOld, deviceId);
+						 registerAndNotice(channel, deviceId);
 					 }else {
 						 logger.error("旧的关闭失败，新的也不能上线");
 					 }
@@ -136,7 +136,7 @@ public class ChannelUserService {
 		}
 		
 		if(logger.isDebugEnabled()) {
-			logger.debug(deviceId + "登录成功,在线人数\t" + str2channel.size());
+			logger.debug(deviceId +"->"+channel.remoteAddress()+ "登录成功,在线人数\t" + str2channel.size());
 		}
 	}
 

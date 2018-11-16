@@ -55,7 +55,7 @@ public class PushServiceHandle extends AbstractHandle {
 		if (msg instanceof MqttMessage) {
 
 			MqttMessage message = (MqttMessage) msg;
-			MqttFixedHeader fixedHeader=message.fixedHeader();
+			MqttFixedHeader fixedHeader = message.fixedHeader();
 			MqttMessageType messageType = fixedHeader.messageType();
 
 			switch (messageType) {
@@ -63,15 +63,15 @@ public class PushServiceHandle extends AbstractHandle {
 				MqttPublishMessage messagepub = (MqttPublishMessage) msg;
 				pub(ctx, messagepub);
 				break;
-			case PUBACK://对于QOS=1和QOS=2收到回复报文之后都是相同的处理
+			case PUBACK:// 对于QOS=1和QOS=2收到回复报文之后都是相同的处理
 			case PUBREC:// 客户端发布收到
-				pubrec(ctx, message,fixedHeader.qosLevel());
+				pubrec(ctx, message, fixedHeader.qosLevel());
 				break;
 			case PUBREL: // 客户端发布释放
 				pubrel(ctx, message);
 				break;
 			case PUBCOMP:
-			
+
 				ReferenceCountUtil.release(message);
 				break;
 			default:
@@ -98,11 +98,10 @@ public class PushServiceHandle extends AbstractHandle {
 		MqttFixedHeader fixedHeader = null;
 		MqttPublishVariableHeader header = messagepub.variableHeader();
 
-		
 		switch (mqttQoS) {
 		case EXACTLY_ONCE:
 			fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.EXACTLY_ONCE, false, 0);
-			MqttMessageIdVariableHeader connectVariableHeader = MqttMessageIdVariableHeader.from( header.packetId());
+			MqttMessageIdVariableHeader connectVariableHeader = MqttMessageIdVariableHeader.from(header.packetId());
 			MqttPubAckMessage ackMessage = new MqttPubAckMessage(fixedHeader, connectVariableHeader);
 			ctx.write(ackMessage);
 			break;
@@ -115,16 +114,15 @@ public class PushServiceHandle extends AbstractHandle {
 			break;
 
 		}
-		
-		SendableMsg sendableMsg = new SendableMsg(header.topicName(), 
-				channelUserService.deviceId(ctx.channel()),
+
+		SendableMsg sendableMsg = new SendableMsg(header.topicName(), channelUserService.deviceId(ctx.channel()),
 				messagepub.content());
 		/**
 		 * 添加消息的保留标志，一般来说，只有保留标志的消息才会被保存
 		 */
 		sendableMsg.setRetain(messagepub.fixedHeader().isRetain());
-		
-		ready2Send(sendableMsg,ctx.channel(),mqttQoS);
+
+		ready2Send(sendableMsg, ctx.channel(), mqttQoS);
 
 	}
 
@@ -136,38 +134,37 @@ public class PushServiceHandle extends AbstractHandle {
 	 * @param messageid
 	 * @param content
 	 */
-	private void ready2Send(SendableMsg sendableMsg,Channel channel,MqttQoS mqttQoS) {
-		
-		String topicname=sendableMsg.getTopName();
-		
+	private void ready2Send(SendableMsg sendableMsg, Channel channel, MqttQoS mqttQoS) {
+
+		String topicname = sendableMsg.getTopName();
+
 		/**
 		 * 如果是点对点发送，直接从主题里面取出deviceid 发送
 		 * 
 		 * 如果是订阅发布发送，则需要走路由
 		 */
-		if(topicname.startsWith(ConstantBean.ONE2ONE_CHAT_PREFIX)) {
-				
-				String deviceId=topicname.substring(ConstantBean.ONE2ONE_CHAT_PREFIX.length());
-				Channel toChannel=channelUserService.channel(deviceId);
-				if(toChannel!=null&&toChannel.isActive()) {
-					messagePushService.sendMsgForChannel(sendableMsg, toChannel,mqttQoS);
-					//点对点发送的时候会记录最后发送对端的设备id
-					channel.attr(ConstantBean.LASTSENT_DEVICEID).set(deviceId);
-				}else {
-					
-					/**
-					 * 如果不在线直接保存信息
-					 */
-					messagePushService.send2Admin( ByteBufEncodingUtil.getInatance()
-							.saveMQByteBuf(ByteBufAllocator.DEFAULT, System.currentTimeMillis(),
-									deviceId, sendableMsg.getMsgContent()));
-					if(logger.isDebugEnabled()){
-						logger.debug(deviceId+"不在线,直接交给admin");
-					}
+		if (topicname.startsWith(ConstantBean.ONE2ONE_CHAT_PREFIX)) {
+
+			String deviceId = topicname.substring(ConstantBean.ONE2ONE_CHAT_PREFIX.length());
+			Channel toChannel = channelUserService.channel(deviceId);
+			if (toChannel != null && toChannel.isActive()) {
+				messagePushService.sendMsgForChannel(sendableMsg, toChannel, mqttQoS);
+				// 点对点发送的时候会记录最后发送对端的设备id
+				channel.attr(ConstantBean.LASTSENT_DEVICEID).set(deviceId);
+			} else {
+
+				/**
+				 * 如果不在线直接保存信息
+				 */
+				messagePushService.send2Admin(ByteBufEncodingUtil.getInatance().saveMQByteBuf(ByteBufAllocator.DEFAULT,
+						System.currentTimeMillis(), deviceId, sendableMsg.getMsgContent()));
+				if (logger.isDebugEnabled()) {
+					logger.debug(deviceId + "不在线,直接交给admin");
 				}
-		
+			}
+
 		}
-		
+
 		/**
 		 * 让下面继续走，保证多端的情况也可以收到消息
 		 */
@@ -183,7 +180,6 @@ public class PushServiceHandle extends AbstractHandle {
 
 		MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBCOMP, false, MqttQoS.AT_LEAST_ONCE, false,
 				0);
-		
 
 		MqttPubAckMessage ackMessage = new MqttPubAckMessage(fixedHeader,
 				MqttMessageIdVariableHeader.from(variableHeader.messageId()));
@@ -199,23 +195,36 @@ public class PushServiceHandle extends AbstractHandle {
 	 * @param ctx
 	 * @param messagepub
 	 */
-	private void pubrec(final ChannelHandlerContext ctx, MqttMessage messagepub,MqttQoS mqttQoS) {
+	private void pubrec(final ChannelHandlerContext ctx, MqttMessage messagepub, MqttQoS mqttQoS) {
 
-		
 		/**
 		 * 如果是qos=2的还需要发消息释放的报文
 		 */
-		if(mqttQoS.equals(MqttQoS.EXACTLY_ONCE)) {
-			MqttMessageIdVariableHeader variableHeader = (MqttMessageIdVariableHeader) messagepub.variableHeader();
+		MqttMessageIdVariableHeader variableHeader = null;
+		MqttFixedHeader fixedHeader = null;
 
-			MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_LEAST_ONCE, false,
-					0);
+		switch (mqttQoS) {
+		case EXACTLY_ONCE:
+			variableHeader = (MqttMessageIdVariableHeader) messagepub.variableHeader();
+			fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_LEAST_ONCE, false, 0);
+			break;
+		case AT_LEAST_ONCE:
+			variableHeader = (MqttMessageIdVariableHeader) messagepub.variableHeader();
+			fixedHeader = new MqttFixedHeader(MqttMessageType.PUBACK, false, MqttQoS.AT_LEAST_ONCE, false, 0);
+			break;
 
+		default:
+			break;
+		}
+		
+		if(fixedHeader!=null) {
 			MqttPubAckMessage ackMessage = new MqttPubAckMessage(fixedHeader,
 					MqttMessageIdVariableHeader.from(variableHeader.messageId()));
 			ctx.write(ackMessage);
+
 		}
 
+	
 		Channel channel = ctx.channel();
 
 		if (channel.hasAttr(ConstantBean.UnConfirmedKey)) {
@@ -224,8 +233,8 @@ public class PushServiceHandle extends AbstractHandle {
 				attribute.set(null);
 			}
 
-			if(logger.isDebugEnabled()) {
-				logger.debug(channelUserService.deviceId(channel)+"收到确认报文，将会删除消息");
+			if (logger.isDebugEnabled()) {
+				logger.debug(channelUserService.deviceId(channel) + "收到确认报文，将会删除消息");
 			}
 		}
 	}
