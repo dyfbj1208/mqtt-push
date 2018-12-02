@@ -10,6 +10,8 @@ import io.mqttpush.mqttserver.service.ChannelUserService;
 import io.mqttpush.mqttserver.service.MessagePushService;
 import io.mqttpush.mqttserver.util.ByteBufEncodingUtil;
 import io.mqttpush.mqttserver.util.StashMessage;
+import io.mqttpush.mqttserver.util.thread.MyHashRunnable;
+import io.mqttpush.mqttserver.util.thread.SignelThreadPoll;
 import io.mqttpush.mqttserver.util.AdminMessage.MessageType;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
@@ -38,6 +40,8 @@ public class PushServiceHandle extends AbstractHandle {
 	ChannelUserService channelUserService;
 
 	MessagePushService messagePushService;
+	
+	SignelThreadPoll signelThreadPoll;
 
 	public PushServiceHandle() {
 
@@ -46,6 +50,8 @@ public class PushServiceHandle extends AbstractHandle {
 		channelUserService = serviceBeans.getChannelUserService();
 
 		messagePushService = serviceBeans.getMessagePushService();
+		
+		signelThreadPoll=serviceBeans.getSignelThreadPoll();
 
 	}
 
@@ -146,29 +152,37 @@ public class PushServiceHandle extends AbstractHandle {
 		if (topicname.startsWith(ConstantBean.ONE2ONE_CHAT_PREFIX)) {
 
 			String deviceId = topicname.substring(ConstantBean.ONE2ONE_CHAT_PREFIX.length());
-			Channel toChannel = channelUserService.channel(deviceId);
-			if (toChannel != null && toChannel.isActive()) {
-				messagePushService.sendMsgForChannel(sendableMsg, toChannel, mqttQoS);
-				// 点对点发送的时候会记录最后发送对端的设备id
-				channel.attr(ConstantBean.LASTSENT_DEVICEID).set(deviceId);
-			} else {
 
-				/**
-				 * 如果不在线直接保存信息
-				 */
-				messagePushService.send2Admin(ByteBufEncodingUtil.getInatance().saveMQByteBuf(ByteBufAllocator.DEFAULT,
-						System.currentTimeMillis(), deviceId, sendableMsg.getMsgContent()));
-				if (logger.isDebugEnabled()) {
-					logger.debug(deviceId + "不在线,直接交给admin");
+			Runnable sendRun = () -> {
+				logger.debug("发送给"+deviceId+"->");
+				Channel toChannel = channelUserService.channel(deviceId);
+				if (toChannel != null && toChannel.isActive()) {
+					messagePushService.sendMsgForChannel(sendableMsg, toChannel, mqttQoS);
+					// 点对点发送的时候会记录最后发送对端的设备id
+					channel.attr(ConstantBean.LASTSENT_DEVICEID).set(deviceId);
+				} else {
+
+					/**
+					 * 如果不在线直接保存信息
+					 */
+					messagePushService
+							.send2Admin(ByteBufEncodingUtil.getInatance().saveMQByteBuf(ByteBufAllocator.DEFAULT,
+									System.currentTimeMillis(), deviceId, sendableMsg.getMsgContent()));
+					if (logger.isDebugEnabled()) {
+						logger.debug(deviceId + "不在线,直接交给admin");
+					}
 				}
-			}
+
+			};
+			
+			signelThreadPoll.execute(new MyHashRunnable(deviceId, sendRun, 0));
 
 		}
 
 		/**
 		 * 让下面继续走，保证多端的情况也可以收到消息
 		 */
-		messagePushService.sendMsg(sendableMsg);
+		//messagePushService.sendMsg(sendableMsg);
 	}
 
 	/**
@@ -216,15 +230,14 @@ public class PushServiceHandle extends AbstractHandle {
 		default:
 			break;
 		}
-		
-		if(fixedHeader!=null) {
+
+		if (fixedHeader != null) {
 			MqttPubAckMessage ackMessage = new MqttPubAckMessage(fixedHeader,
 					MqttMessageIdVariableHeader.from(variableHeader.messageId()));
 			ctx.write(ackMessage);
 
 		}
 
-	
 		Channel channel = ctx.channel();
 
 		if (channel.hasAttr(ConstantBean.UnConfirmedKey)) {

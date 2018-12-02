@@ -6,6 +6,8 @@ import io.mqttpush.mqttserver.beans.ServiceBeans;
 import io.mqttpush.mqttserver.service.ChannelUserService;
 import io.mqttpush.mqttserver.service.CheckUserService;
 import io.mqttpush.mqttserver.service.MessagePushService;
+import io.mqttpush.mqttserver.util.thread.MyHashRunnable;
+import io.mqttpush.mqttserver.util.thread.SignelThreadPoll;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -40,6 +42,8 @@ public class ConnectionHandle extends AbstractHandle {
 	ChannelUserService channelUserService;
 
 	MessagePushService messagePushService;
+	
+	SignelThreadPoll signelThreadPoll;
 
 	public ConnectionHandle() {
 		super();
@@ -48,8 +52,8 @@ public class ConnectionHandle extends AbstractHandle {
 
 		channelUserService = serviceBeans.getChannelUserService();
 		checkUserService = serviceBeans.getCheckUserService();
-
 		messagePushService = serviceBeans.getMessagePushService();
+		signelThreadPoll=serviceBeans.getSignelThreadPoll();
 	}
 
 	@Override
@@ -74,14 +78,9 @@ public class ConnectionHandle extends AbstractHandle {
 				break;
 			default:
 				/**
-				 * 此处应该判断是否登录，如果没有就关闭连接
+				 * 取消没登录不继续走，没登录关闭统一放在了10秒超时处
 				 */
-				if (channelUserService.isLogin(ctx.channel())) {
-					ctx.fireChannelRead(msg);
-				} else {
-					ctx.close();
-					logger.debug("没有登录呢，你想干嘛？" + messageType);
-				}
+				ctx.fireChannelRead(msg);
 				break;
 			}
 		} else
@@ -97,16 +96,34 @@ public class ConnectionHandle extends AbstractHandle {
 	 * @param ctx
 	 * @param connectMessage
 	 */
-	private void ack(final ChannelHandlerContext ctx, final MqttConnectMessage connectMessage) {
+	void ack(final ChannelHandlerContext ctx, final MqttConnectMessage connectMessage) {
 
-		MqttConnAckVariableHeader connectVariableHeader = null;
-		MqttConnectReturnCode returnCode = null;
 		MqttConnectPayload connectPayload = connectMessage.payload();
 		String deviceId = connectPayload.clientIdentifier();
 		Channel channel = ctx.channel();
+		logger.info("设备接入"+deviceId);
+		Runnable runnable=()->{
+			ackDevice(deviceId,channel, connectPayload.userName(), connectPayload.password());
+		};
+		
+		signelThreadPoll.execute(new MyHashRunnable(deviceId, runnable, 0));
 
-		if ((returnCode = checkUserService.checkUserReturnCode(connectPayload.userName(),
-				connectPayload.password())) == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
+	}
+
+	
+	/**
+	 * 响应设备登录
+	 * @param channel
+	 * @param deviceId
+	 * @param username
+	 * @param password
+	 */
+	private void ackDevice(String deviceId,Channel channel,String username,String password) {
+		
+		MqttConnectReturnCode returnCode = null;
+	
+		if ((returnCode = checkUserService.checkUserReturnCode(username,
+				password)) == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
 			channelUserService.processLoginSuccess(deviceId, channel);
 		}
 
@@ -114,16 +131,16 @@ public class ConnectionHandle extends AbstractHandle {
 
 			MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE,
 					false, 0);
-
-			connectVariableHeader = new MqttConnAckVariableHeader(returnCode, false);
+			MqttConnAckVariableHeader connectVariableHeader = new MqttConnAckVariableHeader(returnCode, false);
 			MqttConnAckMessage mqttConnAckMessage = new MqttConnAckMessage(fixedHeader, connectVariableHeader);
 
-			ctx.writeAndFlush(mqttConnAckMessage);
+			channel.writeAndFlush(mqttConnAckMessage);
 
 		}
-
+		else {
+			logger.warn("怎么会为空?"+deviceId);
+		}
 	}
-
 	/**
 	 * 处理心跳ping
 	 * 

@@ -1,11 +1,17 @@
 package io.mqttpush.mqttserver.service;
 
+import java.util.function.BiConsumer;
+
+import org.apache.log4j.Logger;
+
 import io.mqttpush.mqttserver.beans.ConstantBean;
 import io.mqttpush.mqttserver.beans.SendableMsg;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
 import io.mqttpush.mqttserver.exception.SendException;
 import io.mqttpush.mqttserver.exception.SendException.SendError;
 import io.mqttpush.mqttserver.util.AdminMessage.MessageType;
+import io.mqttpush.mqttserver.util.thread.MyHashRunnable;
+import io.mqttpush.mqttserver.util.thread.SignelThreadPoll;
 import io.mqttpush.mqttserver.util.ByteBufEncodingUtil;
 import io.mqttpush.mqttserver.util.StashMessage;
 import io.netty.buffer.ByteBuf;
@@ -13,14 +19,13 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.handler.codec.mqtt.*;
+import io.netty.handler.codec.mqtt.MqttFixedHeader;
+import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
+import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
-import org.apache.log4j.Logger;
-
-import java.util.function.BiConsumer;
 
 /**
  * message 实际发送服务
@@ -36,6 +41,7 @@ public class MessagePushService {
 
 	TopicService topicService;
 
+	SignelThreadPoll signelThreadPoll;
 	ChannelUserService channelUserService;
 
 	public MessagePushService() {
@@ -43,6 +49,7 @@ public class MessagePushService {
 		ServiceBeans serviceBeans = ServiceBeans.getInstance();
 		channelUserService = serviceBeans.getChannelUserService();
 		topicService = serviceBeans.getTopicService();
+		signelThreadPoll=serviceBeans.getSignelThreadPoll();
 
 	}
 
@@ -53,30 +60,41 @@ public class MessagePushService {
 	 */
 	public void sendMsg(final SendableMsg sendableMsg) {
 
+		
+
 		BiConsumer<String, MqttQoS> consumer = (deviceId, mqttQos) -> {
 
-			Channel channel = channelUserService.channel(deviceId);
+			
+		
+			Runnable sendrunnable=()->{
+				
+				Channel channel = channelUserService.channel(deviceId);
 
-			boolean isfail = false;
-			if (channel != null && channel.isActive()) {
-				try {
-					sendMsgForChannel(sendableMsg, channel, mqttQos);
-				} catch (Exception e) {
+				boolean isfail = false;
+				if (channel != null && channel.isActive()) {
+					try {
+						sendMsgForChannel(sendableMsg, channel, mqttQos);
+					} catch (Exception e) {
+						isfail = true;
+						logger.warn("发送"+deviceId+"失败",e);
+					}
+				} else {
 					isfail = true;
-					logger.warn("发送"+deviceId+"失败",e);
+					logger.warn("设备"+deviceId+"通道关闭");
 				}
-			} else {
-				isfail = true;
-				logger.warn("设备"+deviceId+"通道关闭");
-			}
 
-			/**
-			 * 只要失败了就暂存消息
-			 */
-			if (isfail) {
-				handleAndStash(new StashMessage(MessageType.STASH, deviceId, System.currentTimeMillis(),
-						sendableMsg.getByteForContent()), SendError.CHANNEL_OFF);
-			}
+				/**
+				 * 只要失败了就暂存消息
+				 */
+				if (isfail) {
+					handleAndStash(new StashMessage(MessageType.STASH, deviceId, System.currentTimeMillis(),
+							sendableMsg.getByteForContent()), SendError.CHANNEL_OFF);
+				}
+			};
+			
+			
+			signelThreadPoll.execute(new MyHashRunnable(deviceId, sendrunnable, 0));
+			
 		};
 
 		topicService.channelsSend(sendableMsg.getTopName(), consumer);
