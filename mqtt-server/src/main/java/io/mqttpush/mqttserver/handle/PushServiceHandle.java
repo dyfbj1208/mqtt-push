@@ -5,14 +5,11 @@ import org.apache.log4j.Logger;
 import io.mqttpush.mqttserver.beans.ConstantBean;
 import io.mqttpush.mqttserver.beans.SendableMsg;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
-import io.mqttpush.mqttserver.exception.SendException.SendError;
 import io.mqttpush.mqttserver.service.ChannelUserService;
 import io.mqttpush.mqttserver.service.MessagePushService;
 import io.mqttpush.mqttserver.util.ByteBufEncodingUtil;
-import io.mqttpush.mqttserver.util.StashMessage;
 import io.mqttpush.mqttserver.util.thread.MyHashRunnable;
 import io.mqttpush.mqttserver.util.thread.SignelThreadPoll;
-import io.mqttpush.mqttserver.util.AdminMessage.MessageType;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -77,7 +74,6 @@ public class PushServiceHandle extends AbstractHandle {
 				pubrel(ctx, message);
 				break;
 			case PUBCOMP:
-
 				ReferenceCountUtil.release(message);
 				break;
 			default:
@@ -154,7 +150,7 @@ public class PushServiceHandle extends AbstractHandle {
 			String deviceId = topicname.substring(ConstantBean.ONE2ONE_CHAT_PREFIX.length());
 
 			Runnable sendRun = () -> {
-				logger.debug("发送给"+deviceId+"->");
+
 				Channel toChannel = channelUserService.channel(deviceId);
 				if (toChannel != null && toChannel.isActive()) {
 					messagePushService.sendMsgForChannel(sendableMsg, toChannel, mqttQoS);
@@ -182,7 +178,7 @@ public class PushServiceHandle extends AbstractHandle {
 		/**
 		 * 让下面继续走，保证多端的情况也可以收到消息
 		 */
-		//messagePushService.sendMsg(sendableMsg);
+		messagePushService.sendMsg(sendableMsg);
 	}
 
 	/**

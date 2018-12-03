@@ -2,6 +2,7 @@ package io.mqttpush.mqttserver.beans;
 
 import java.util.Map;
 
+import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
 
 /**
@@ -28,6 +29,14 @@ public class ConstantBean {
 	 * 指示是否登录
 	 */
 	public static final AttributeKey<Boolean> loginKey = AttributeKey.valueOf("login");
+	
+
+	/**
+	 * 当有旧的channel需要关闭的时候，旧的channel指示新的channel
+	 */
+	public static final AttributeKey<Channel> newChannel = AttributeKey.valueOf("newChannel");
+	
+	
 	
 	
 	public static final int MAX_ERROR_SENT=3;

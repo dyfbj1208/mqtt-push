@@ -143,6 +143,7 @@ public class MessagePushService {
 					sendBytes), SendError.CHANNEL_OFF);
 		}
 
+		logger.debug(sendableMsg.getSendDeviceId()+"--->"+deviceId);
 	}
 
 	/**

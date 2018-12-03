@@ -104,8 +104,12 @@ public class ChannelUserService {
 		}
 	}
 	/**
-	 * 成功登录 剔除以前的连接
-	 * 
+	 *处理成功成功
+	 *
+	 *如果当前设备号没有关联旧的channel直接注册
+	 *
+	 *如果当前设备号关联的旧的oldchannel,线关闭oldchannel,新channel注册将会在oldchannel关闭的时候执行
+	 * 必须保证在亲缘线程里面执行
 	 * @param ident
 	 * @param channel
 	 */
@@ -113,23 +117,20 @@ public class ChannelUserService {
 
 		Map<String, Channel> str2channel = threadstr2channel.get();
 		final Channel channelOld = str2channel.put(deviceId, channel);
-		if (channelOld != null) {
+		if (channelOld != null&&channelOld.isActive()) {
 			/**
 			 * 
-			 * 算了，直接关闭了拉到
+			 * 关闭旧的channel
 			 * 然后设置旧的channel对应的新channel
 			 * 这个新的cahnnel只有在旧的channel logout的时候才会注册
 			 * 
 			 */
-			logger.info(channelOld.remoteAddress()+"关闭设备旧的channel->"+deviceId);
-			
 			if(channelOld.isActive()) {
-				channelOld.close();
 				channelOld.attr(ConstantBean.newChannel).set(channel);
-			}else {
-				registerAndNotice(deviceId,channel);
+				channelOld.close();
 			}
 			
+			logger.info(channelOld.remoteAddress()+"关闭设备旧的channel->"+deviceId);
 
 		} else {
 			registerAndNotice(deviceId,channel);

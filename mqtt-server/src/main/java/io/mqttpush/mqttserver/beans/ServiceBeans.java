@@ -7,7 +7,6 @@ import io.mqttpush.mqttserver.service.CheckUserService;
 import io.mqttpush.mqttserver.service.MessagePushService;
 import io.mqttpush.mqttserver.service.TopicService;
 import io.mqttpush.mqttserver.util.thread.SignelThreadPoll;
-import io.netty.channel.SingleThreadEventLoop;
 
 /**
  * 管理用到的service bean

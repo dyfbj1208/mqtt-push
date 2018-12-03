@@ -41,19 +41,24 @@ public class ConnectionHandle extends AbstractHandle {
 	 */
 	ChannelUserService channelUserService;
 
+	/**
+	 * 消息发送
+	 */
 	MessagePushService messagePushService;
-	
+
+	/**
+	 * 根据hash标志亲缘线程池
+	 */
 	SignelThreadPoll signelThreadPoll;
 
 	public ConnectionHandle() {
 		super();
 
 		ServiceBeans serviceBeans = ServiceBeans.getInstance();
-
 		channelUserService = serviceBeans.getChannelUserService();
 		checkUserService = serviceBeans.getCheckUserService();
 		messagePushService = serviceBeans.getMessagePushService();
-		signelThreadPoll=serviceBeans.getSignelThreadPoll();
+		signelThreadPoll = serviceBeans.getSignelThreadPoll();
 	}
 
 	@Override
@@ -78,13 +83,13 @@ public class ConnectionHandle extends AbstractHandle {
 				break;
 			default:
 				/**
-				 * 取消没登录不继续走，没登录关闭统一放在了10秒超时处
+				 * 就算没登陆也继续走，没登录关闭统一放在了10秒超时处关闭
 				 */
 				ctx.fireChannelRead(msg);
 				break;
 			}
-		} else
-			ctx.close();
+		}
+
 	}
 
 	/**
@@ -101,27 +106,27 @@ public class ConnectionHandle extends AbstractHandle {
 		MqttConnectPayload connectPayload = connectMessage.payload();
 		String deviceId = connectPayload.clientIdentifier();
 		Channel channel = ctx.channel();
-		logger.info("设备接入"+deviceId);
-		Runnable runnable=()->{
-			ackDevice(deviceId,channel, connectPayload.userName(), connectPayload.password());
+		Runnable runnable = () -> {
+			ackDevice(deviceId, channel, connectPayload.userName(), connectPayload.password());
 		};
-		
+
 		signelThreadPoll.execute(new MyHashRunnable(deviceId, runnable, 0));
 
+		logger.info("设备接入" + deviceId);
 	}
 
-	
 	/**
 	 * 响应设备登录
+	 * 必须保证在亲缘线程里面执行
 	 * @param channel
 	 * @param deviceId
 	 * @param username
 	 * @param password
 	 */
-	private void ackDevice(String deviceId,Channel channel,String username,String password) {
-		
+	private void ackDevice(String deviceId, Channel channel, String username, String password) {
+
 		MqttConnectReturnCode returnCode = null;
-	
+
 		if ((returnCode = checkUserService.checkUserReturnCode(username,
 				password)) == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
 			channelUserService.processLoginSuccess(deviceId, channel);
@@ -136,11 +141,11 @@ public class ConnectionHandle extends AbstractHandle {
 
 			channel.writeAndFlush(mqttConnAckMessage);
 
-		}
-		else {
-			logger.warn("怎么会为空?"+deviceId);
+		} else {
+			logger.warn("怎么会为空?" + deviceId);
 		}
 	}
+
 	/**
 	 * 处理心跳ping
 	 * 
@@ -158,7 +163,7 @@ public class ConnectionHandle extends AbstractHandle {
 		if (channel.hasAttr(ConstantBean.UnConfirmedKey)) {
 
 			/**
-			 * 凡是传输都是 bytebuff, 凡是占存都是 byte[];
+			 * 凡是传输都是 bytebuff, 凡是存储都是 byte[];
 			 */
 			SendableMsg sendableMsg = null;
 			Attribute<SendableMsg> attribute = channel.attr(ConstantBean.UnConfirmedKey);
@@ -168,8 +173,7 @@ public class ConnectionHandle extends AbstractHandle {
 				}
 				messagePushService.sendMsgForChannel(sendableMsg, channel, MqttQoS.EXACTLY_ONCE);
 				if (logger.isDebugEnabled()) {
-					logger.debug("重发消息->" + sendableMsg.getSendDeviceId() + ":"
-							+ sendableMsg.getTopName());
+					logger.debug("重发消息->" + sendableMsg.getSendDeviceId() + ":" + sendableMsg.getTopName());
 				}
 			}
 		}

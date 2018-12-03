@@ -40,7 +40,7 @@ public class TopicService {
 
 	Map<String, ChannelGroup> mapChannelGroup;
 
-	SignelThreadPoll signelThreadPoll;
+
 
 	/**
 	 * 发送服务
@@ -51,7 +51,6 @@ public class TopicService {
 
 		channelUserService = ServiceBeans.getInstance().getChannelUserService();
 
-		signelThreadPoll = ServiceBeans.getInstance().getSignelThreadPoll();
 
 		mapChannelGroup = new ConcurrentHashMap<>();
 		ChannelGroup adminChannelGroup = new DefaultChannelGroup(new UnorderedThreadPoolEventExecutor(4));
@@ -80,6 +79,7 @@ public class TopicService {
 	/**
 	 * 处理订阅
 	 * 
+	 * 必须在亲缘线程执行
 	 * @param channel
 	 * @param topicname
 	 * @param mqttQoS
@@ -91,8 +91,6 @@ public class TopicService {
 		}
 
 		String deviceId = channelUserService.deviceId(channel);
-
-		Runnable subRun = () -> {
 
 			if (deviceId == null) {
 
@@ -118,30 +116,23 @@ public class TopicService {
 			 */
 			devSubTopics.get(topicname).putIfAbsent(deviceId, mqttQoS);
 
-		};
-
-		signelThreadPoll.execute(new MyHashRunnable(deviceId, subRun, 0));
 
 	}
 
 	/**
 	 * 取消订阅
-	 * 
+	 *  必须在亲缘线程执行
 	 * @param deviceId
 	 * @param topName
 	 */
 	public void unscribe(String deviceId, String topName) {
 
-		Runnable unScrRun = () -> {
-			Channel channel = channelUserService.channel(deviceId);
-			if (channel == null || (!channel.isActive())) {
-				logger.warn("取消订阅失败，取消订阅的时候 必须channnel在线");
-				return;
-			}
-
-		};
-
-		signelThreadPoll.execute(new MyHashRunnable(deviceId, unScrRun, 0));
+		
+		Channel channel = channelUserService.channel(deviceId);
+		if (channel == null || (!channel.isActive())) {
+			logger.warn("取消订阅失败，取消订阅的时候 必须channnel在线");
+			return;
+		}
 	}
 
 	/**

@@ -7,6 +7,8 @@ import org.apache.log4j.Logger;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
 import io.mqttpush.mqttserver.service.ChannelUserService;
 import io.mqttpush.mqttserver.service.TopicService;
+import io.mqttpush.mqttserver.util.thread.MyHashRunnable;
+import io.mqttpush.mqttserver.util.thread.SignelThreadPoll;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessage;
@@ -34,6 +36,7 @@ public class SubServiceHandle extends AbstractHandle {
 
 	TopicService topService;
 
+	SignelThreadPoll signelThreadPoll;
 	
 	public SubServiceHandle() {
 		
@@ -41,6 +44,7 @@ public class SubServiceHandle extends AbstractHandle {
 		
 		channelUserService = serviceBeans.getChannelUserService();
 		topService = serviceBeans.getTopicService();
+		signelThreadPoll=serviceBeans.getSignelThreadPoll();
 	}
 
 	@Override
@@ -128,8 +132,13 @@ public class SubServiceHandle extends AbstractHandle {
 		
 		if(list!=null&&!list.isEmpty()) {
 			list.forEach((topic)->{
+			
+				Runnable unScrRun=()->{
+					topService.unscribe(deviceId, topic);
+				};
+					
+				signelThreadPoll.execute(new MyHashRunnable(deviceId, unScrRun, 0));
 				
-				topService.unscribe(deviceId, topic);
 			});
 		}
 
