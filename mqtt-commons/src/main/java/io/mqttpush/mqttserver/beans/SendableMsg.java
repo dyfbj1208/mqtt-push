@@ -31,6 +31,7 @@ public class SendableMsg extends MsgRep{
 	
 	public SendableMsg(String topname, String sendDeviceId, ByteBuf msgContent) {
 		super(msgContent.hashCode(), topname, msgContent);
+		this.setSendDeviceId(sendDeviceId);
 	}
 
 	public boolean isRetain() {

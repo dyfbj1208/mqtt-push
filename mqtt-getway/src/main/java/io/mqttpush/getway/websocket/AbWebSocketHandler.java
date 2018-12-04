@@ -78,7 +78,7 @@ public class AbWebSocketHandler extends ChannelInboundHandlerAdapter {
 		Statistics.aBconnCount.incrementAndGet();
 
 		if(logger.isDebugEnabled()) {
-			logger.debug(("用户上线: " + ctx.channel().id().asLongText()));
+			logger.debug(("用户上线: " + ctx.channel().remoteAddress()));
 		}
 		
 		/**
@@ -136,7 +136,7 @@ public class AbWebSocketHandler extends ChannelInboundHandlerAdapter {
 			tochannel.writeAndFlush(binaryWebSocketFrame.content());
 			Statistics.requestCount.incrementAndGet();
 			if(logger.isDebugEnabled()) {			
-				logger.debug("websocket写入到MQTT服务"+msg);
+				logger.debug(fromchannel.remoteAddress()+"websocket写入到MQTT服务"+tochannel.remoteAddress());
 			}
 			
 		}

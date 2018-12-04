@@ -1,5 +1,7 @@
 package io.mqttpush.mqttserver.handle;
 
+import org.apache.log4j.Logger;
+
 import io.mqttpush.mqttserver.beans.ConstantBean;
 import io.mqttpush.mqttserver.beans.SendableMsg;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
@@ -31,6 +33,8 @@ import io.netty.util.Attribute;
 
 public class ConnectionHandle extends AbstractHandle {
 
+	
+	Logger logger = Logger.getLogger(getClass());
 	/**
 	 * 校验用户是否可以登录
 	 */
@@ -116,8 +120,8 @@ public class ConnectionHandle extends AbstractHandle {
 	}
 
 	/**
-	 * 响应设备登录
-	 * 必须保证在亲缘线程里面执行
+	 * 响应设备登录 必须保证在亲缘线程里面执行
+	 * 
 	 * @param channel
 	 * @param deviceId
 	 * @param username
@@ -127,23 +131,30 @@ public class ConnectionHandle extends AbstractHandle {
 
 		MqttConnectReturnCode returnCode = null;
 
-		if ((returnCode = checkUserService.checkUserReturnCode(username,
+		
+		logger.info(deviceId + "->连接"+channel.remoteAddress());
+		/**
+		 * 如果这个链路已经登录只是重连的话直接过
+		 * 
+		 */
+		if (channelUserService.isLogin(channel)) {
+			returnCode = MqttConnectReturnCode.CONNECTION_ACCEPTED;
+			logger.info(deviceId + "重连");
+		}
+
+		else if ((returnCode = checkUserService.checkUserReturnCode(username,
 				password)) == MqttConnectReturnCode.CONNECTION_ACCEPTED) {
 			channelUserService.processLoginSuccess(deviceId, channel);
 		}
+		
+		logger.info(deviceId + "->连接->"+returnCode.name());
 
-		if (returnCode != null) {
+		MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE,
+				false, 0);
+		MqttConnAckVariableHeader connectVariableHeader = new MqttConnAckVariableHeader(returnCode, false);
+		MqttConnAckMessage mqttConnAckMessage = new MqttConnAckMessage(fixedHeader, connectVariableHeader);
 
-			MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE,
-					false, 0);
-			MqttConnAckVariableHeader connectVariableHeader = new MqttConnAckVariableHeader(returnCode, false);
-			MqttConnAckMessage mqttConnAckMessage = new MqttConnAckMessage(fixedHeader, connectVariableHeader);
-
-			channel.writeAndFlush(mqttConnAckMessage);
-
-		} else {
-			logger.warn("怎么会为空?" + deviceId);
-		}
+		channel.writeAndFlush(mqttConnAckMessage);
 	}
 
 	/**
