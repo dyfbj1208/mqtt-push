@@ -1,5 +1,7 @@
 package io.mqttpush.mqttserver.util.thread;
 
+import org.apache.log4j.Logger;
+
 /**
  * 
  *  CPU亲缘行的runnable对象
@@ -10,6 +12,7 @@ package io.mqttpush.mqttserver.util.thread;
  */
 public class MyHashRunnable implements Runnable {
 
+	Logger logger=Logger.getLogger(getClass());
 	String identify;
 	Runnable runnable;
 	int retrys;
@@ -22,6 +25,10 @@ public class MyHashRunnable implements Runnable {
 	}
 
 	public void run() {
-		this.runnable.run();
+		try {
+			this.runnable.run();
+		} catch (Exception e) {
+			logger.warn("出现了异常,但是已经捕获了",e);
+		}
 	}
 }

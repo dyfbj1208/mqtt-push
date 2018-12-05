@@ -1,12 +1,12 @@
 package io.mqttpush.mqttserver.util.thread;
 
+import org.apache.log4j.Logger;
+
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.log4j.Logger;
 
 
 
@@ -24,20 +24,20 @@ import org.apache.log4j.Logger;
  *  
  *
  */
-public  class LoopSingelThread extends ThreadPoolExecutor {
+public  class LoopSingleThread extends ThreadPoolExecutor {
 
-	LoopSingelThread next;
+	LoopSingleThread next;
 
-	LoopSingelThread prev;
+	LoopSingleThread prev;
 
 	
-	public static Logger logger=Logger.getLogger(LoopSingelThread.class);
+	public static Logger logger=Logger.getLogger(LoopSingleThread.class);
 
 	int index;
 
 	int totalThreadCount;
 
-	public LoopSingelThread(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit) {
+	public LoopSingleThread(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit) {
 		super(1, 1, 0, TimeUnit.MICROSECONDS, new LinkedBlockingQueue<>(10240),new MyThreadFactory());
 
 	}
@@ -52,7 +52,6 @@ public  class LoopSingelThread extends ThreadPoolExecutor {
 				logger.info(super.hashCode()+"直接处理"+index+"->"+me.identify);
 				super.execute(command);
 			} else if(next!=null){
-				logger.info(index+"无法处理,接下一个处理");
 				next.execute(command);
 			}else {
 				logger.info("寻找匹配线程失败"+me.identify);
@@ -121,19 +120,19 @@ public  class LoopSingelThread extends ThreadPoolExecutor {
 		this.index = index;
 	}
 
-	public LoopSingelThread getNext() {
+	public LoopSingleThread getNext() {
 		return next;
 	}
 
-	public void setNext(LoopSingelThread next) {
+	public void setNext(LoopSingleThread next) {
 		this.next = next;
 	}
 
-	public LoopSingelThread getPrev() {
+	public LoopSingleThread getPrev() {
 		return prev;
 	}
 
-	public void setPrev(LoopSingelThread prev) {
+	public void setPrev(LoopSingleThread prev) {
 		this.prev = prev;
 	}
 

@@ -9,7 +9,7 @@ import io.mqttpush.mqttserver.service.ChannelUserService;
 import io.mqttpush.mqttserver.service.CheckUserService;
 import io.mqttpush.mqttserver.service.MessagePushService;
 import io.mqttpush.mqttserver.util.thread.MyHashRunnable;
-import io.mqttpush.mqttserver.util.thread.SignelThreadPoll;
+import io.mqttpush.mqttserver.util.thread.SingleThreadPool;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -53,7 +53,7 @@ public class ConnectionHandle extends AbstractHandle {
 	/**
 	 * 根据hash标志亲缘线程池
 	 */
-	SignelThreadPoll signelThreadPoll;
+	SingleThreadPool signelThreadPoll;
 
 	public ConnectionHandle() {
 		super();
@@ -62,7 +62,7 @@ public class ConnectionHandle extends AbstractHandle {
 		channelUserService = serviceBeans.getChannelUserService();
 		checkUserService = serviceBeans.getCheckUserService();
 		messagePushService = serviceBeans.getMessagePushService();
-		signelThreadPoll = serviceBeans.getSignelThreadPoll();
+		signelThreadPoll = serviceBeans.getSingleThreadPool();
 	}
 
 	@Override

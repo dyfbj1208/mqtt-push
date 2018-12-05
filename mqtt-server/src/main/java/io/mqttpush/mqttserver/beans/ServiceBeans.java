@@ -6,7 +6,7 @@ import io.mqttpush.mqttserver.service.ChannelUserService;
 import io.mqttpush.mqttserver.service.CheckUserService;
 import io.mqttpush.mqttserver.service.MessagePushService;
 import io.mqttpush.mqttserver.service.TopicService;
-import io.mqttpush.mqttserver.util.thread.SignelThreadPoll;
+import io.mqttpush.mqttserver.util.thread.SingleThreadPool;
 
 /**
  * 管理用到的service bean
@@ -23,7 +23,7 @@ public class ServiceBeans {
 	 CheckUserService checkUserService;
 	 MessagePushService messagePushService;
 	 TopicService topicService;
-	 SignelThreadPoll signelThreadPoll;
+	 SingleThreadPool singleThreadPool;
 	 
 
 	 
@@ -82,14 +82,17 @@ public class ServiceBeans {
 		return topicService;
 	}
 
-	public SignelThreadPoll getSignelThreadPoll() {
+	/**
+	 * 单线程线程池
+	 * @return
+	 */
+	public SingleThreadPool getSingleThreadPool() {
 		
-		
-		if(signelThreadPoll==null) {
-			signelThreadPoll=new SignelThreadPoll(4);
+		if(singleThreadPool==null) {
+			singleThreadPool=new SingleThreadPool(4);
 		}
 	
-		return signelThreadPoll;
+		return singleThreadPool;
 	}
 
 	

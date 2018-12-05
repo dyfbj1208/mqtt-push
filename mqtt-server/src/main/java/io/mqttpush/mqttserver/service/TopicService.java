@@ -1,22 +1,21 @@
 package io.mqttpush.mqttserver.service;
 
-import io.mqttpush.mqttserver.beans.ConstantBean;
-import io.mqttpush.mqttserver.beans.SendableMsg;
-import io.mqttpush.mqttserver.beans.ServiceBeans;
-import io.mqttpush.mqttserver.util.thread.MyHashRunnable;
-import io.mqttpush.mqttserver.util.thread.SignelThreadPoll;
-import io.netty.channel.Channel;
-import io.netty.channel.group.ChannelGroup;
-import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.handler.codec.mqtt.MqttQoS;
-import io.netty.util.concurrent.UnorderedThreadPoolEventExecutor;
-import org.apache.log4j.Logger;
-
 import java.security.SecureRandom;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
+
+import org.apache.log4j.Logger;
+
+import io.mqttpush.mqttserver.beans.ConstantBean;
+import io.mqttpush.mqttserver.beans.SendableMsg;
+import io.mqttpush.mqttserver.beans.ServiceBeans;
+import io.netty.channel.Channel;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.util.concurrent.UnorderedThreadPoolEventExecutor;
 
 /**
  * 维护订阅相主题关的信息的service
@@ -30,17 +29,14 @@ public class TopicService {
 	/**
 	 * 通道订阅
 	 */
-	// CasCadeMap<String, String> many2ManytopChannels = new CasCadeMap<String,
-	// String>();
-
 	final Map<String, Map<String, MqttQoS>> devSubTopics;
+	
+	
 	final SecureRandom random = new SecureRandom();
 
 	ChannelUserService channelUserService;
 
 	Map<String, ChannelGroup> mapChannelGroup;
-
-
 
 	/**
 	 * 发送服务
@@ -181,7 +177,7 @@ public class TopicService {
 			 * 这里随机选择一个channel 发送即可
 			 */
 			ChannelGroup channelGroup = mapChannelGroup.get(topicName);
-
+			
 			if (channelGroup.size() <= 0) {
 				return;
 			}

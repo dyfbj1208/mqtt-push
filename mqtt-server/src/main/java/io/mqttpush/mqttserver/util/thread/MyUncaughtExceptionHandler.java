@@ -12,12 +12,12 @@ import org.apache.log4j.Logger;
  */
 public class MyUncaughtExceptionHandler  implements UncaughtExceptionHandler{
 
-	public static Logger logger=Logger.getLogger(LoopSingelThread.class);
+	public static Logger logger=Logger.getLogger(MyUncaughtExceptionHandler.class);
 	
 	@Override
 	public void uncaughtException(Thread t, Throwable e) {
 		
-		logger.warn(t.getName()+"异常",e);
+		logger.warn(t.getName()+"异常,将会结束掉!!!",e);
 	}
 
 }

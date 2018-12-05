@@ -4,7 +4,6 @@ import java.nio.charset.Charset;
 
 import com.alibaba.fastjson.JSON;
 
-import io.mqttpush.getway.GetWayConstantBean;
 import io.mqttpush.mqttserver.beans.HttpPushVo;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -12,11 +11,6 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.mqtt.MqttFixedHeader;
-import io.netty.handler.codec.mqtt.MqttMessageType;
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
-import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
-import io.netty.handler.codec.mqtt.MqttQoS;
 
 /**
  * 处理JSON的fulltext

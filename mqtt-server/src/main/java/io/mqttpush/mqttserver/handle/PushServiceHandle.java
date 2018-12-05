@@ -9,7 +9,7 @@ import io.mqttpush.mqttserver.service.ChannelUserService;
 import io.mqttpush.mqttserver.service.MessagePushService;
 import io.mqttpush.mqttserver.util.ByteBufEncodingUtil;
 import io.mqttpush.mqttserver.util.thread.MyHashRunnable;
-import io.mqttpush.mqttserver.util.thread.SignelThreadPoll;
+import io.mqttpush.mqttserver.util.thread.SingleThreadPool;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -38,7 +38,7 @@ public class PushServiceHandle extends AbstractHandle {
 
 	MessagePushService messagePushService;
 	
-	SignelThreadPoll signelThreadPoll;
+	SingleThreadPool singleThreadPool;
 
 	public PushServiceHandle() {
 
@@ -48,7 +48,7 @@ public class PushServiceHandle extends AbstractHandle {
 
 		messagePushService = serviceBeans.getMessagePushService();
 		
-		signelThreadPoll=serviceBeans.getSignelThreadPoll();
+		singleThreadPool=serviceBeans.getSingleThreadPool();
 
 	}
 
@@ -171,7 +171,7 @@ public class PushServiceHandle extends AbstractHandle {
 
 			};
 			
-			signelThreadPoll.execute(new MyHashRunnable(deviceId, sendRun, 0));
+			singleThreadPool.execute(new MyHashRunnable(deviceId, sendRun, 0));
 
 		}
 

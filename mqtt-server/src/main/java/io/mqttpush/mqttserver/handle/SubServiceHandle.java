@@ -8,7 +8,7 @@ import io.mqttpush.mqttserver.beans.ServiceBeans;
 import io.mqttpush.mqttserver.service.ChannelUserService;
 import io.mqttpush.mqttserver.service.TopicService;
 import io.mqttpush.mqttserver.util.thread.MyHashRunnable;
-import io.mqttpush.mqttserver.util.thread.SignelThreadPoll;
+import io.mqttpush.mqttserver.util.thread.SingleThreadPool;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessage;
@@ -36,7 +36,7 @@ public class SubServiceHandle extends AbstractHandle {
 
 	TopicService topService;
 
-	SignelThreadPoll signelThreadPoll;
+	SingleThreadPool singleThreadPool;
 	
 	public SubServiceHandle() {
 		
@@ -44,7 +44,7 @@ public class SubServiceHandle extends AbstractHandle {
 		
 		channelUserService = serviceBeans.getChannelUserService();
 		topService = serviceBeans.getTopicService();
-		signelThreadPoll=serviceBeans.getSignelThreadPoll();
+		singleThreadPool=serviceBeans.getSingleThreadPool();
 	}
 
 	@Override
@@ -137,7 +137,7 @@ public class SubServiceHandle extends AbstractHandle {
 					topService.unscribe(deviceId, topic);
 				};
 					
-				signelThreadPoll.execute(new MyHashRunnable(deviceId, unScrRun, 0));
+				singleThreadPool.execute(new MyHashRunnable(deviceId, unScrRun, 0));
 				
 			});
 		}

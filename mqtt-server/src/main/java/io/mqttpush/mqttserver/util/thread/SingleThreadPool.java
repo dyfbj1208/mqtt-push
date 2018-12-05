@@ -1,7 +1,6 @@
 package io.mqttpush.mqttserver.util.thread;
 
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -13,26 +12,26 @@ import java.util.concurrent.TimeUnit;
  * @author acer
  *
  */
-public class SignelThreadPoll {
+public class SingleThreadPool {
 
 	int threadCount;
-	LoopSingelThread[] loopSingelThreads;
+	LoopSingleThread[] loopSingleThreads;
 	BlockingQueue<Runnable> workQueue;;
 
-	public SignelThreadPoll(int threadCount) {
+	public SingleThreadPool(int threadCount) {
 		super();
 		this.threadCount = threadCount;
-		loopSingelThreads = new LoopSingelThread[threadCount];
+		loopSingleThreads = new LoopSingleThread[threadCount];
 		
 
-		LoopSingelThread prev = new LoopSingelThread(1, 1, 0, TimeUnit.MICROSECONDS);
+		LoopSingleThread prev = new LoopSingleThread(1, 1, 0, TimeUnit.MICROSECONDS);
 		prev.setTotalThreadCount(threadCount);
 		prev.setIndex(0);
-		loopSingelThreads[0] = prev;
+		loopSingleThreads[0] = prev;
 
 		for (int i = 1; i < threadCount; i++) {
-			LoopSingelThread curt = new LoopSingelThread(1, 1, 0, TimeUnit.MICROSECONDS);
-			loopSingelThreads[i] = curt;
+			LoopSingleThread curt = new LoopSingleThread(1, 1, 0, TimeUnit.MICROSECONDS);
+			loopSingleThreads[i] = curt;
 			curt.setTotalThreadCount(threadCount);
 			curt.setIndex(i);
 
@@ -44,8 +43,8 @@ public class SignelThreadPoll {
 	}
 
 	public void execute(Runnable command) {
-		if (loopSingelThreads != null && loopSingelThreads.length > 0) {
-			loopSingelThreads[0].execute(command);
+		if (loopSingleThreads != null && loopSingleThreads.length > 0) {
+			loopSingleThreads[0].execute(command);
 		}
 	}
 

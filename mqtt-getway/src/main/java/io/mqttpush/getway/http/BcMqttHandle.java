@@ -201,6 +201,8 @@ public class BcMqttHandle extends ChannelInboundHandlerAdapter {
 							
 							logger.debug("content:"+new String(bs));
 						}
+					}else {
+						logger.warn("连接回调地址失败"+callback);
 					}
 				});
 			}else{

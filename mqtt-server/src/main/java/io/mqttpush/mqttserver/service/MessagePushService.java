@@ -10,10 +10,10 @@ import io.mqttpush.mqttserver.beans.ServiceBeans;
 import io.mqttpush.mqttserver.exception.SendException;
 import io.mqttpush.mqttserver.exception.SendException.SendError;
 import io.mqttpush.mqttserver.util.AdminMessage.MessageType;
-import io.mqttpush.mqttserver.util.thread.MyHashRunnable;
-import io.mqttpush.mqttserver.util.thread.SignelThreadPoll;
 import io.mqttpush.mqttserver.util.ByteBufEncodingUtil;
 import io.mqttpush.mqttserver.util.StashMessage;
+import io.mqttpush.mqttserver.util.thread.MyHashRunnable;
+import io.mqttpush.mqttserver.util.thread.SingleThreadPool;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -41,7 +41,8 @@ public class MessagePushService {
 
 	TopicService topicService;
 
-	SignelThreadPoll signelThreadPoll;
+	SingleThreadPool singleThreadPool;
+	
 	ChannelUserService channelUserService;
 
 	public MessagePushService() {
@@ -49,7 +50,7 @@ public class MessagePushService {
 		ServiceBeans serviceBeans = ServiceBeans.getInstance();
 		channelUserService = serviceBeans.getChannelUserService();
 		topicService = serviceBeans.getTopicService();
-		signelThreadPoll=serviceBeans.getSignelThreadPoll();
+		singleThreadPool=serviceBeans.getSingleThreadPool();
 
 	}
 
@@ -92,8 +93,8 @@ public class MessagePushService {
 				}
 			};
 			
-			
-			signelThreadPoll.execute(new MyHashRunnable(deviceId, sendrunnable, 0));
+	
+			singleThreadPool.execute(new MyHashRunnable(deviceId, sendrunnable, 0));
 			
 		};
 

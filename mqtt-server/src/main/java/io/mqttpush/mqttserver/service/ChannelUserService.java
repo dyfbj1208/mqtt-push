@@ -9,7 +9,7 @@ import io.mqttpush.mqttserver.beans.ConstantBean;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
 import io.mqttpush.mqttserver.util.ByteBufEncodingUtil;
 import io.mqttpush.mqttserver.util.thread.MyHashRunnable;
-import io.mqttpush.mqttserver.util.thread.SignelThreadPoll;
+import io.mqttpush.mqttserver.util.thread.SingleThreadPool;
 import io.netty.channel.Channel;
 
 /**
@@ -35,7 +35,7 @@ public class ChannelUserService {
 
 	MessagePushService messagePushService;
 	
-	SignelThreadPoll signelThreadPoll;
+	SingleThreadPool singleThreadPool;
 
 	/**
 	 * 退出
@@ -47,7 +47,7 @@ public class ChannelUserService {
 	
 
 		String deviceId = deviceId(channel);
-		Channel newChannel=channel.attr(ConstantBean.newChannel).get();
+
 		if (deviceId == null) {
 			logger.warn("为什么设备号为空?"+deviceId);
 			return;
@@ -58,6 +58,7 @@ public class ChannelUserService {
 			/**
 			 * 先关闭 然后再注册
 			 */
+			Channel newChannel=channel.attr(ConstantBean.newChannel).get();
 			processCloseChannel(deviceId, channel);
 			if(newChannel!=null) {
 				registerAndNotice(deviceId, newChannel);
@@ -72,6 +73,7 @@ public class ChannelUserService {
 
 	/**
 	 * 清理channel和通知admin
+	 * 必须保证在亲缘线程里面执行
 	 * @param deviceId
 	 * @param channel
 	 */
@@ -232,12 +234,12 @@ public class ChannelUserService {
 		return messagePushService;
 	}
 
-	public SignelThreadPoll getSignelThreadPoll() {
+	public SingleThreadPool getSignelThreadPoll() {
 		
-		if(signelThreadPoll==null) {
-			signelThreadPoll=ServiceBeans.getInstance().getSignelThreadPoll();
+		if(singleThreadPool==null) {
+			singleThreadPool=ServiceBeans.getInstance().getSingleThreadPool();
 		}
-		return signelThreadPoll;
+		return singleThreadPool;
 	}
 
 	
