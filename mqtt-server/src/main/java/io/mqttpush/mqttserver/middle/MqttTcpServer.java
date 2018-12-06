@@ -58,7 +58,7 @@ public class MqttTcpServer {
 		try {
 			bootstrap.childHandler(new MyChannelInitializer());
 			ChannelFuture f = bootstrap.bind().sync();// 实际绑定操作
-			System.out.println(MqttTcpServer.class.getName() + " 服务器启动成功 " + f.channel().localAddress());
+			System.out.println(MqttTcpServer.class.getName() + "001-服务器启动成功 " + f.channel().localAddress());
 			f.channel().closeFuture().sync();// ;// 等待 服务器关闭
 		} catch (Exception e) {
 			e.printStackTrace();

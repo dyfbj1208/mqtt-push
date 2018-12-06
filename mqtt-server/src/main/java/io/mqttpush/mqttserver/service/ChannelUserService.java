@@ -44,7 +44,7 @@ public class ChannelUserService {
 	public void loginout(Channel channel) {
 
 
-		logger.info("loginout->"+channel.remoteAddress());
+		logger.info("loginout--->"+channel.remoteAddress());
 		String deviceId = deviceId(channel);
 
 		if (deviceId == null) {

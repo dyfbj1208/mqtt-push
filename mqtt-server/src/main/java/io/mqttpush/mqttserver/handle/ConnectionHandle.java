@@ -74,7 +74,11 @@ public class ConnectionHandle extends AbstractHandle {
 				break;
 
 			case DISCONNECT:
-				disconnect(ctx);
+				
+				if(logger.isDebugEnabled()) {
+					logger.debug("收到关闭报文,将会关闭连接"+ctx.channel().remoteAddress());
+				}
+				ctx.close();
 				break;
 			default:
 				/**
@@ -188,6 +192,11 @@ public class ConnectionHandle extends AbstractHandle {
 
 	@Override
 	public void disconnect(ChannelHandlerContext context) {
+		
+		if(logger.isDebugEnabled()) {
+			logger.debug("调用disconnect"+context.channel().remoteAddress());
+		}
+		
 		channelUserService.loginout(context.channel());
 	}
 
