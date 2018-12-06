@@ -1,8 +1,8 @@
 package io.mqttpush.mqttserver.beans;
 
-import java.io.Serializable;
-
 import io.netty.buffer.ByteBuf;
+
+import java.io.Serializable;
 
 /**
  * 消息实体类
@@ -28,10 +28,7 @@ public class MsgRep implements  Serializable{
      * 消息的bytebuf 
      */
     private ByteBuf msgContent;
-    
-    public MsgRep(){
-    	
-    }
+
 
 
 	public MsgRep(Integer messageId, String topName, ByteBuf msgContent) {

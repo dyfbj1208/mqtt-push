@@ -11,7 +11,7 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 public interface Handle {
 
 	
-	public void connec(ChannelHandlerContext context);
+	public void connect(ChannelHandlerContext context);
 	
 	public void onMessage(ChannelHandlerContext context,MqttMessage message);
 	

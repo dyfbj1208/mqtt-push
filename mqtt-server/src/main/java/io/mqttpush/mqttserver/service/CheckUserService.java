@@ -1,11 +1,10 @@
 package io.mqttpush.mqttserver.service;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import org.apache.log4j.Logger;
 
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 检查用户名密码的服务
@@ -40,7 +39,7 @@ public class CheckUserService {
 	/**
 	 * 验证用户名密码 返回一个验证结果
 	 * 
-	 * @param validate
+	 * @param username
 	 * @return
 	 */
 	public MqttConnectReturnCode checkUserReturnCode(String username,String password) {

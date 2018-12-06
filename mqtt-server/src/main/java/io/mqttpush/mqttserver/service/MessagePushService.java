@@ -1,9 +1,5 @@
 package io.mqttpush.mqttserver.service;
 
-import java.util.function.BiConsumer;
-
-import org.apache.log4j.Logger;
-
 import io.mqttpush.mqttserver.beans.ConstantBean;
 import io.mqttpush.mqttserver.beans.SendableMsg;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
@@ -19,13 +15,12 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.handler.codec.mqtt.MqttFixedHeader;
-import io.netty.handler.codec.mqtt.MqttMessageType;
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
-import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
-import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.*;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
+import org.apache.log4j.Logger;
+
+import java.util.function.BiConsumer;
 
 /**
  * message 实际发送服务
@@ -110,41 +105,49 @@ public class MessagePushService {
 	public void sendMsgForChannel(final SendableMsg sendableMsg, Channel channel, MqttQoS mqttQoS) {
 
 		String deviceId = channelUserService.deviceId(channel);
-		byte []sendBytes=sendableMsg.getByteForContent();
+
+		final  boolean isRetain=sendableMsg.isRetain();
+		if(isRetain){
+			sendableMsg.getByteForContent();
+		}
+
 		
 		if (channel != null && channel.isActive()) {
 			ChannelFuture channelFuture = sendMsg(sendableMsg, channel, deviceId, mqttQoS);
 			channelFuture.addListener((ChannelFuture future) -> {
 
-				if (!future.isSuccess()) {
-					if (future.cause() instanceof SendException) {
+				/**
+				 * 发送成功的话只要有保留标志就得发给admin
+				 */
+				if(sendableMsg.isRetain()){
 
+					if(!future.isSuccess()){
 						handleAndStash(
 								new StashMessage(MessageType.STASH, deviceId, System.currentTimeMillis(),
-										sendBytes),
+										sendableMsg.getByteForContent()),
 								((SendException) channelFuture.cause()).getSendError());
-					} else {
-						handleAndStash(new StashMessage(MessageType.STASH, deviceId, System.currentTimeMillis(),
-								sendBytes), SendError.CHANNEL_OFF);
+					}else{
+
+						send2Admin(ByteBufEncodingUtil.getInatance().saveMQByteBuf(ByteBufAllocator.DEFAULT,
+								System.currentTimeMillis(), deviceId, Unpooled.wrappedBuffer(sendableMsg.getByteForContent())));
 					}
 
-					/**
-					 * 如果消息是需要保存的就发给admin去保存起来
-					 */
-				} else if (sendableMsg.isRetain()) {
-
-					send2Admin(ByteBufEncodingUtil.getInatance().saveMQByteBuf(ByteBufAllocator.DEFAULT,
-							System.currentTimeMillis(), deviceId, Unpooled.wrappedBuffer(sendBytes)));
 				}
+
+
 
 			});
 
-		} else {
+		} else if(sendableMsg.isRetain()){
+
 			handleAndStash(new StashMessage(MessageType.STASH, deviceId, System.currentTimeMillis(),
-					sendBytes), SendError.CHANNEL_OFF);
+					sendableMsg.getByteForContent()), SendError.CHANNEL_OFF);
 		}
 
-		logger.debug(sendableMsg.getSendDeviceId()+"--->"+deviceId);
+		if(logger.isDebugEnabled()){
+			logger.debug(sendableMsg.getSendDeviceId()+"--->"+deviceId);
+		}
+
 	}
 
 	/**
@@ -182,12 +185,16 @@ public class MessagePushService {
 
 		AttributeKey<MqttQoS> attributeKey = AttributeKey.valueOf(sendableMsg.getTopName());
 
+		/**
+		 * 默认选择发送方的服务质量
+		 * 如果接收方的channel上面包含了服务质量就用channel的服务质量
+		 */
 		MqttQoS qosLevel = mqttQoS;
 		if (channel.hasAttr(attributeKey)) {
 			qosLevel = channel.attr(attributeKey).get();
 		}
 
-		MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, sendableMsg.getDupTimes() > 0,
+		MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH,sendableMsg.isDup(),
 				qosLevel, sendableMsg.isRetain(), 0);
 
 		MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(sendableMsg.getTopName(),
@@ -219,6 +226,8 @@ public class MessagePushService {
 
 		if (qosLevel == MqttQoS.EXACTLY_ONCE
 				||qosLevel==MqttQoS.AT_LEAST_ONCE) {
+
+			sendableMsg.setDup(true);
 			sendableMsg.setDupTimes(sendableMsg.getDupTimes() + 1);
 			channel.attr(ConstantBean.UnConfirmedKey).set(sendableMsg);
 

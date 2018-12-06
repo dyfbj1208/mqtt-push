@@ -1,14 +1,13 @@
 package io.mqttpush.mqttserver.handle;
 
-import java.util.concurrent.TimeUnit;
-
-import org.apache.log4j.Logger;
-
 import io.mqttpush.mqttserver.beans.ConstantBean;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.mqtt.MqttMessage;
+import org.apache.log4j.Logger;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * 抽象的channelhandle
@@ -44,7 +43,7 @@ public abstract  class AbstractHandle extends ChannelInboundHandlerAdapter imple
 
 
 	@Override
-	public void connec(ChannelHandlerContext context) { 
+	public void connect(ChannelHandlerContext context) {
 		try {
 			super.channelActive(context);
 		} catch (Exception e) {
@@ -65,7 +64,7 @@ public abstract  class AbstractHandle extends ChannelInboundHandlerAdapter imple
 
 	@Override
 	public  void disconnect(ChannelHandlerContext context) {
-		context.close();
+		logger.info("disconnect->"+context.channel().remoteAddress());
 	}
 	
 	public void channelReadComplete(ChannelHandlerContext ctx) {
@@ -74,8 +73,10 @@ public abstract  class AbstractHandle extends ChannelInboundHandlerAdapter imple
 
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+
+		logger.info("channelInactive->"+ctx.channel().remoteAddress());
 		disconnect(ctx);
-		super.channelInactive(ctx);
+
 
 	}
 	

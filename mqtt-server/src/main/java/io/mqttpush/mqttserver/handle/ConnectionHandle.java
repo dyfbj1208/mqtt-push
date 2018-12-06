@@ -1,7 +1,5 @@
 package io.mqttpush.mqttserver.handle;
 
-import org.apache.log4j.Logger;
-
 import io.mqttpush.mqttserver.beans.ConstantBean;
 import io.mqttpush.mqttserver.beans.SendableMsg;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
@@ -13,16 +11,9 @@ import io.mqttpush.mqttserver.util.thread.SingleThreadPool;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.mqtt.MqttConnAckMessage;
-import io.netty.handler.codec.mqtt.MqttConnAckVariableHeader;
-import io.netty.handler.codec.mqtt.MqttConnectMessage;
-import io.netty.handler.codec.mqtt.MqttConnectPayload;
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
-import io.netty.handler.codec.mqtt.MqttFixedHeader;
-import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttMessageType;
-import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.*;
 import io.netty.util.Attribute;
+import org.apache.log4j.Logger;
 
 /**
  * 处理登录 心跳，断开的handle
@@ -179,9 +170,14 @@ public class ConnectionHandle extends AbstractHandle {
 			SendableMsg sendableMsg = null;
 			Attribute<SendableMsg> attribute = channel.attr(ConstantBean.UnConfirmedKey);
 			if (attribute != null && (sendableMsg = attribute.get()) != null) {
-				if (sendableMsg.getByteForContent() != null) {
-					sendableMsg.setMsgContent(Unpooled.wrappedBuffer(sendableMsg.getByteForContent()));
+				if (sendableMsg.getByteForContent() == null) {
+					if (logger.isDebugEnabled()) {
+						logger.debug("重发消息已经丢失了->" + sendableMsg.getSendDeviceId() + ":" + sendableMsg.getTopName());
+					}
+					return;
 				}
+
+				sendableMsg.setMsgContent(Unpooled.wrappedBuffer(sendableMsg.getByteForContent()));
 				messagePushService.sendMsgForChannel(sendableMsg, channel, MqttQoS.EXACTLY_ONCE);
 				if (logger.isDebugEnabled()) {
 					logger.debug("重发消息->" + sendableMsg.getSendDeviceId() + ":" + sendableMsg.getTopName());
@@ -193,7 +189,6 @@ public class ConnectionHandle extends AbstractHandle {
 	@Override
 	public void disconnect(ChannelHandlerContext context) {
 		channelUserService.loginout(context.channel());
-		super.disconnect(context);
 	}
 
 }

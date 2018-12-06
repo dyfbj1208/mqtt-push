@@ -1,16 +1,15 @@
 package io.mqttpush.mqttserver.service;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.log4j.Logger;
-
 import io.mqttpush.mqttserver.beans.ConstantBean;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
 import io.mqttpush.mqttserver.util.ByteBufEncodingUtil;
 import io.mqttpush.mqttserver.util.thread.MyHashRunnable;
 import io.mqttpush.mqttserver.util.thread.SingleThreadPool;
 import io.netty.channel.Channel;
+import org.apache.log4j.Logger;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 管理者登录信息的设备号以及channel
@@ -40,12 +39,12 @@ public class ChannelUserService {
 	/**
 	 * 退出
 	 * 
-	 * @param handlerContext
+	 * @param channel 需要关闭的channel
 	 */
 	public void loginout(Channel channel) {
 
-	
 
+		logger.info("loginout->"+channel.remoteAddress());
 		String deviceId = deviceId(channel);
 
 		if (deviceId == null) {
@@ -112,7 +111,7 @@ public class ChannelUserService {
 	 *
 	 *如果当前设备号关联的旧的oldchannel,线关闭oldchannel,新channel注册将会在oldchannel关闭的时候执行
 	 * 必须保证在亲缘线程里面执行
-	 * @param ident
+	 * @param deviceId
 	 * @param channel
 	 */
 	public void processLoginSuccess(String deviceId, Channel channel) {
@@ -180,7 +179,7 @@ public class ChannelUserService {
 	/**
 	 * 是否登录
 	 * 
-	 * @param deviceId
+	 * @param channel 现在根据channel是否包含登录标志来决定是否登陆
 	 * @return
 	 */
 	public boolean isLogin(Channel channel) {

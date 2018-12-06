@@ -95,21 +95,24 @@ public class PushServiceHandle extends AbstractHandle {
 	 */
 	private void pub(final ChannelHandlerContext ctx, MqttPublishMessage messagepub) {
 
-		MqttQoS mqttQoS = messagepub.fixedHeader().qosLevel();
 
-		MqttFixedHeader fixedHeader = null;
+		MqttFixedHeader msgHeader=messagepub.fixedHeader();
+		MqttQoS mqttQoS = msgHeader.qosLevel();
+
+		MqttFixedHeader recvHeader = null;
+
 		MqttPublishVariableHeader header = messagepub.variableHeader();
 
 		switch (mqttQoS) {
 		case EXACTLY_ONCE:
-			fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.EXACTLY_ONCE, false, 0);
+			recvHeader = new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.EXACTLY_ONCE, false, 0);
 			MqttMessageIdVariableHeader connectVariableHeader = MqttMessageIdVariableHeader.from(header.packetId());
-			MqttPubAckMessage ackMessage = new MqttPubAckMessage(fixedHeader, connectVariableHeader);
+			MqttPubAckMessage ackMessage = new MqttPubAckMessage(recvHeader, connectVariableHeader);
 			ctx.write(ackMessage);
 			break;
 		case AT_LEAST_ONCE:
-			fixedHeader = new MqttFixedHeader(MqttMessageType.PUBACK, false, MqttQoS.AT_LEAST_ONCE, false, 0);
-			MqttMessage message = new MqttMessage(fixedHeader);
+			recvHeader = new MqttFixedHeader(MqttMessageType.PUBACK, false, MqttQoS.AT_LEAST_ONCE, false, 0);
+			MqttMessage message = new MqttMessage(recvHeader);
 			ctx.write(message);
 			break;
 		default:
@@ -121,8 +124,10 @@ public class PushServiceHandle extends AbstractHandle {
 				messagepub.content());
 		/**
 		 * 添加消息的保留标志，一般来说，只有保留标志的消息才会被保存
+		 * 添加重发标志，标志这个消息是否是重发
 		 */
-		sendableMsg.setRetain(messagepub.fixedHeader().isRetain());
+		sendableMsg.setRetain(msgHeader.isRetain());
+		sendableMsg.setDup(msgHeader.isDup());
 
 		ready2Send(sendableMsg, ctx.channel(), mqttQoS);
 
@@ -132,9 +137,9 @@ public class PushServiceHandle extends AbstractHandle {
 	 * 准备去发送
 	 * 
 	 * @param channel
-	 * @param topname
-	 * @param messageid
-	 * @param content
+	 * @param sendableMsg 可发送镀锡
+	 * @param channel 标志消息是谁发来的
+	 * @param mqttQoS 服务质量
 	 */
 	private void ready2Send(SendableMsg sendableMsg, Channel channel, MqttQoS mqttQoS) {
 

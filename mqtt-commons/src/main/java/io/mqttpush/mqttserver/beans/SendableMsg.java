@@ -4,7 +4,7 @@ import io.netty.buffer.ByteBuf;
 
 /**
  * 用于发送的消息对象
- * @author acer
+ * @author tzj
  *
  */
 public class SendableMsg extends MsgRep{
@@ -22,11 +22,18 @@ public class SendableMsg extends MsgRep{
 	private  boolean  retain;
 
 	/**
+	 * 重发标记
+	 */
+	private boolean  isDup;
+	/**
 	 * 重发次数
 	 */
 	private int dupTimes;
-	
-	
+
+	/**
+	 * 消息内容的字节数组形式
+	 * 凡是发送都是bytebu,凡是暂存都是字节数组
+	 */
 	byte[] bytesContent;
 	
 	public SendableMsg(String topname, String sendDeviceId, ByteBuf msgContent) {
@@ -57,6 +64,14 @@ public class SendableMsg extends MsgRep{
 
 	public void setDupTimes(int dupTimes) {
 		this.dupTimes = dupTimes;
+	}
+
+	public boolean isDup() {
+		return isDup;
+	}
+
+	public void setDup(boolean dup) {
+		isDup = dup;
 	}
 
 	public byte[] getByteForContent() {
