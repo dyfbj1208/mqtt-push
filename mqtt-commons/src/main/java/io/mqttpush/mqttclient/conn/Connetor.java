@@ -1,6 +1,5 @@
 package io.mqttpush.mqttclient.conn;
 
-import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -27,156 +26,126 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.timeout.ReadTimeoutHandler;
-import io.netty.util.concurrent.GenericFutureListener;
 
 public class Connetor {
-	
-	
-	Logger logger=Logger.getLogger(Connetor.class);
-	final EventLoopGroup group = new NioEventLoopGroup();
+
+	Logger logger = Logger.getLogger(Connetor.class);
+	final EventLoopGroup eventLoopGroup;
 	final Bootstrap bootstrap;
 
-	final Properties properties;
+	final ConnectProperties properties;
 	final ApiService apiService;
 	final MessageListener defaultMessageListener;
 	ChannelFuture nowCloseFuture;
-	
-	AtomicBoolean isValidate=new AtomicBoolean(true);
-	
-	final String host;
-	final Integer port;
-	
+
+	AtomicBoolean isValidate = new AtomicBoolean(true);
+
+	ScheduledExecutorService executorService = Executors.newScheduledThreadPool(2);
+
 	ChannelFuture channelFuture;
-	
-	public Connetor(Properties properties, ApiService apiService, MessageListener defaultMessageListener) {
+
+	public Connetor(ConnectProperties properties, ApiService apiService, MessageListener defaultMessageListener) {
 		super();
 		this.properties = properties;
 		this.apiService = apiService;
 		this.defaultMessageListener = defaultMessageListener;
-		bootstrap=new Bootstrap();
-		
-		host = (String) properties.getOrDefault("host", "127.0.0.1");
-		port = (Integer) properties.getOrDefault("port", 1000);
-		
+		bootstrap = new Bootstrap();
+		eventLoopGroup = new NioEventLoopGroup(1);
+
 		init();
 	}
-	
-	
-	
+
 	/**
 	 * 初始化
 	 */
-	public void  init() {
-	
-		final Integer pingtime = (Integer) properties.getOrDefault("pingtime", 60);
-		final String deviceId = (String) properties.getOrDefault("deviceId", "0000");
-		final String username = (String) properties.getOrDefault("username", "user");
-		final String password = (String) properties.getOrDefault("password", "user123456");
-		final String subTopic = (String) properties.getOrDefault("subTopic", null);
-		
+	public void init() {
 
-		bootstrap.group(group).channel(NioSocketChannel.class).option(ChannelOption.TCP_NODELAY, true)
-		.handler(new ChannelInitializer<SocketChannel>() {
-			@Override
-			public void initChannel(SocketChannel ch) throws Exception {
-				ChannelPipeline p = ch.pipeline();
-				p.addLast(
-						new ReadTimeoutHandler(pingtime*2),
-						MqttEncoder.INSTANCE, new MqttDecoder(),
-						new ConnectionHandle(isValidate,apiService,deviceId, username, password,subTopic),
-						new PubHandle(defaultMessageListener), new SubHandle());
-			}
-		});
-		
-		
+		final Integer pingtime = properties.getPingtime();
+		final String deviceId = properties.getDeviceId();
+		final String username = properties.getUsername();
+		final String password = properties.getPassword();
+		final String subTopic = properties.getSubTopic();
+
+		bootstrap.group(eventLoopGroup).channel(NioSocketChannel.class).option(ChannelOption.TCP_NODELAY, true)
+				.handler(new ChannelInitializer<SocketChannel>() {
+					@Override
+					public void initChannel(SocketChannel ch) throws Exception {
+						ChannelPipeline p = ch.pipeline();
+						p.addLast(new ReadTimeoutHandler(pingtime * 2), MqttEncoder.INSTANCE, new MqttDecoder(),
+								new ConnectionHandle(Connetor.this,isValidate, apiService, deviceId, username, password, subTopic),
+								new PubHandle(defaultMessageListener), new SubHandle());
+					}
+				});
+
 	}
-	
-	
+
 	/**
 	 * 连接
+	 * 
 	 * @return
 	 */
 	public ChannelFuture connection() {
 
-			ChannelFuture channelFuture= bootstrap.connect(host, port);
-			
-			
-			final ScheduledExecutorService executorService= Executors.newScheduledThreadPool(2);
-			
-			channelFuture.addListener(new GenericFutureListener<ChannelFuture>() {
+		String host = properties.getHost();
+		Integer port = properties.getPort();
 
-				@Override
-				public void operationComplete(ChannelFuture future) throws Exception {
-					if(future.isSuccess()) {
-						
-						PingRunnable runnable=new PingRunnable(future.channel(), isValidate, Connetor.this,executorService);
-						executorService.schedule(runnable, 1, TimeUnit.MINUTES);
-						isValidate.set(true);
-						if(logger.isDebugEnabled()) {
-							logger.debug("连接成功"+host+":"+port);
-					
-						}
-					}
-					else {
-						executorService.schedule(new Runnable() {
-							@Override
-							public void run() {
-								reconnection();
-							}
-						}, 3, TimeUnit.SECONDS);
-						logger.warn("连接失败",future.cause());
-					}
+		ChannelFuture channelFuture = bootstrap.connect(host, port);
+
+		channelFuture.addListener((ChannelFuture future) -> {
+
+			if (future.isSuccess()) {
+
+				PingRunnable runnable = new PingRunnable(future.channel(),
+						isValidate, 
+						Connetor.this,
+						properties.getPingtime(),
+						executorService);
+				executorService.schedule(runnable, properties.getPingtime(), TimeUnit.SECONDS);
+				isValidate.set(true);
+				if (logger.isDebugEnabled()) {
+					logger.debug("连接成功" + host + ":" + port);
 				}
-				
-			});
-			this.channelFuture=channelFuture;
-			return channelFuture;
-			
-			 
-		
-	}
-	
-	
-	/**
-	 * 重连接
-	 * @return
-	 */
-	public ChannelFuture  reconnection() {
-	
-		ChannelFuture channelFuture=this.channelFuture;
-		if(channelFuture==null) {
-			return null;
-		}
-		
-		Channel channel=channelFuture.channel();
-		if(!channel.isActive()) {
-			return connection();
-		}
-		
-		channelFuture=channel.close();
-		
-		channelFuture.addListener(new GenericFutureListener<ChannelFuture>() {
-			@Override
-			public void operationComplete(ChannelFuture future) throws Exception {
-				 
-				if(future.isSuccess()) {
-					connection();
-				}else {
-					logger.warn("关闭失败",future.cause());
-				}
+			} else {
+				/**
+				 * 连接失败，重新连接
+				 */
+				executorService.schedule( ()->{
+					reconnection(future.channel());
+				},3, TimeUnit.SECONDS);
+				logger.warn("连接失败", future.cause());
 			}
-			
 		});
-		
+		this.channelFuture = channelFuture;
 		return channelFuture;
 	}
+
+	/**
+	 * 重连接
+	 * 
+	 * @return
+	 */
+	public ChannelFuture reconnection(Channel channel) {
+
 	
-	
+		
+		/**
+		 * 清理调调度线程池
+		 */
+		executorService.shutdownNow();
+		executorService = Executors.newScheduledThreadPool(2);
+		
+		
+		if (channel==null||!channel.isActive()) {
+			return connection();
+		}
+
+		return  channel.close();
+	}
+
 	@Override
 	protected void finalize() throws Throwable {
 		super.finalize();
 		logger.info("销毁");
 	}
-	
-	
+
 }

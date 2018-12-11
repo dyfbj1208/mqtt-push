@@ -4,9 +4,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
 
+import io.mqttpush.mqttclient.conn.Connetor;
 import io.mqttpush.mqttclient.service.ApiService;
 import io.mqttpush.mqttclient.service.DefaultApiService;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.mqtt.MqttConnAckMessage;
@@ -25,16 +27,20 @@ public class ConnectionHandle extends ChannelInboundHandlerAdapter {
 
 	Logger logger = Logger.getLogger(getClass());
 
-	String username;
-	String password;
-	String deviceId;
-	ApiService apiService;
-	String substop;
-	AtomicBoolean isValidate;
+	final String username;
+	final String password;
+	final String deviceId;
+	final ApiService apiService;
+	final String substop;
+	final AtomicBoolean isValidate;
+	final Connetor connetor;
 
-	public ConnectionHandle(AtomicBoolean isValidate, ApiService apiService, String deviceId, String username,
-			String password, String substop) {
+	final AttributeKey<Boolean> loginKey = AttributeKey.valueOf("login");
+
+	public ConnectionHandle(Connetor connetor, AtomicBoolean isValidate, ApiService apiService, String deviceId,
+			String username, String password, String substop) {
 		super();
+		this.connetor = connetor;
 		this.isValidate = isValidate;
 		this.deviceId = deviceId;
 		this.username = username;
@@ -47,18 +53,24 @@ public class ConnectionHandle extends ChannelInboundHandlerAdapter {
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
 		apiService.setChannel(ctx.channel());
 		apiService.login(deviceId, username, password);
+		
+		ctx.channel().closeFuture().addListener((ChannelFuture future)->{
+			connetor.connection();
+		});
 	}
 
 	@Override
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-		logger.error("链路异常", cause);
+		logger.warn("链路异常", cause);
 		super.exceptionCaught(ctx, cause);
 	}
 
 	@Override
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-		logger.warn("链路关闭");
+
+		logger.warn("链路关闭,将会重新连接");
 		super.channelInactive(ctx);
+
 	}
 
 	@Override
@@ -96,11 +108,12 @@ public class ConnectionHandle extends ChannelInboundHandlerAdapter {
 
 		case CONNECTION_ACCEPTED:
 
-			AttributeKey<Boolean> loginKey = AttributeKey.valueOf("login");
 			final Channel channel = ctx.channel();
 			channel.attr(loginKey).set(true);
 			// 登录成功
-			apiService.subscribe(substop, MqttQoS.AT_LEAST_ONCE);
+			if (substop != null) {
+				apiService.subscribe(substop, MqttQoS.AT_LEAST_ONCE);
+			}
 			break;
 		default:
 			if (logger.isDebugEnabled()) {

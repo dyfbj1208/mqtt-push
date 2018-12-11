@@ -13,7 +13,6 @@ import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttQoS;
-import io.netty.util.concurrent.GenericFutureListener;
 
 /**
  * 发送心跳
@@ -27,22 +26,24 @@ public class PingRunnable implements Runnable {
 
 	final Channel channel;
 
-	AtomicBoolean isValidate;
+	final AtomicBoolean isValidate;
 
-	Connetor connetor;
-	
+	final Connetor connetor;
+
 	final ScheduledExecutorService executorService;
-
+	
+	final Integer pingTime;
 
 	public PingRunnable(Channel channel, AtomicBoolean isValidate, Connetor connetor,
+			Integer pingTime,
 			ScheduledExecutorService executorService) {
 		super();
 		this.channel = channel;
 		this.isValidate = isValidate;
 		this.connetor = connetor;
+		this.pingTime=pingTime;
 		this.executorService = executorService;
 	}
-
 
 	@Override
 	public void run() {
@@ -51,27 +52,24 @@ public class PingRunnable implements Runnable {
 		 * 只要链路不可用，或者没有收到心跳回复就重新连接
 		 */
 		if (!channel.isActive() || (!isValidate.get())) {
-			connetor.reconnection();
+			connetor.reconnection(channel);
 			logger.warn("链路不可用,重新连接");
 			return;
 		}
+
 		channel.writeAndFlush(
 				new MqttMessage(new MqttFixedHeader(MqttMessageType.PINGREQ, false, MqttQoS.AT_MOST_ONCE, false, 0)))
-				.addListener(new GenericFutureListener<ChannelFuture>() {
+				.addListener((ChannelFuture future) -> {
 
-					@Override
-					public void operationComplete(ChannelFuture future) throws Exception {
+					if (logger.isDebugEnabled()) {
+						logger.debug("发送心跳");
+					}
 
-						if (logger.isDebugEnabled()) {
-							logger.debug("发送心跳");
-						}
-
-						/**
-						 * 只要心跳发出去了就设置了 没收到心跳
-						 */
-						if(isValidate.compareAndSet(true, false)) {							
-							executorService.schedule(PingRunnable.this, 1, TimeUnit.MINUTES);
-						}
+					/**
+					 * 只要心跳发出去了就设置了 没收到心跳
+					 */
+					if (isValidate.compareAndSet(true, false)) {
+						executorService.schedule(PingRunnable.this, pingTime, TimeUnit.SECONDS);
 					}
 
 				});
