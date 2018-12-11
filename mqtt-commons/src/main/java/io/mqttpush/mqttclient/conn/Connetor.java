@@ -42,7 +42,6 @@ public class Connetor {
 
 	ScheduledExecutorService executorService = Executors.newScheduledThreadPool(2);
 
-	ChannelFuture channelFuture;
 
 	public Connetor(ConnectProperties properties, ApiService apiService, MessageListener defaultMessageListener) {
 		super();
@@ -115,7 +114,7 @@ public class Connetor {
 				logger.warn("连接失败", future.cause());
 			}
 		});
-		this.channelFuture = channelFuture;
+		
 		return channelFuture;
 	}
 
