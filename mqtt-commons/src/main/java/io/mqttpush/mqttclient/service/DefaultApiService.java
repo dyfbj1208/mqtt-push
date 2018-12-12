@@ -2,9 +2,11 @@ package io.mqttpush.mqttclient.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
 
+import io.mqttpush.mqttclient.conn.Status;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -40,7 +42,7 @@ public class DefaultApiService implements ApiService{
 	
 	static DefaultApiService defaultApiService;
 	
-	final AttributeKey<Boolean> loginKey = AttributeKey.valueOf("login");
+	
 	
 	public DefaultApiService() {
 		
@@ -155,9 +157,9 @@ public class DefaultApiService implements ApiService{
 	 * @return
 	 */
 	boolean islogin(){
+		AtomicBoolean isLogin=Status.isLogin;
 		
-		Channel channel=getChannel();
-		return channel.hasAttr(loginKey)&&channel.attr(loginKey).get();
+		return isLogin!=null&&isLogin.get();
 		
 	}
 }

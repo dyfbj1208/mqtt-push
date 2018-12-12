@@ -41,7 +41,7 @@ public class Connetor {
 	final ConnectionHandle connectionHandle;
 	ChannelFuture nowCloseFuture;
 	
-	AtomicBoolean hasConnect = new AtomicBoolean(false);
+
 
 	ScheduledExecutorService executorService = Executors.newScheduledThreadPool(2);
 
@@ -99,6 +99,8 @@ public class Connetor {
 		String host = properties.getHost();
 		Integer port = properties.getPort();
 
+		AtomicBoolean hasConnect=Status.hasConnect;
+		
 		ChannelFuture channelFuture = bootstrap.connect(host, port);
 
 		channelFuture.addListener((ChannelFuture future) -> {
@@ -145,7 +147,7 @@ public class Connetor {
 	public ChannelFuture reconnection(Channel channel) {
 
 	
-		
+		AtomicBoolean hasConnect=Status.hasConnect;
 		/**
 		 * 清理调调度线程池
 		 */

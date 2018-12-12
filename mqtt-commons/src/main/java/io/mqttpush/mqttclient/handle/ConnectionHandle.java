@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.log4j.Logger;
 
 import io.mqttpush.mqttclient.conn.Connetor;
+import io.mqttpush.mqttclient.conn.Status;
 import io.mqttpush.mqttclient.service.ApiService;
 import io.mqttpush.mqttclient.service.DefaultApiService;
 import io.netty.channel.ChannelFuture;
@@ -38,7 +39,7 @@ public class ConnectionHandle extends ChannelInboundHandlerAdapter {
 	final Connetor connetor;
 	PingRunnable pingRunnable;
 
-	final AtomicBoolean isLogin=new AtomicBoolean(false);
+	
 	
 	
 	final BlockingQueue<TopicAndQos> topics=new LinkedBlockingQueue<>(4);
@@ -74,6 +75,7 @@ public class ConnectionHandle extends ChannelInboundHandlerAdapter {
 	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
 
 		logger.warn("链路关闭,将会重新连接");
+		AtomicBoolean isLogin=Status.isLogin;
 		isLogin.set(false);
 		super.channelInactive(ctx);
 
@@ -113,12 +115,14 @@ public class ConnectionHandle extends ChannelInboundHandlerAdapter {
 		switch (ackMessage.variableHeader().connectReturnCode()) {
 
 		case CONNECTION_ACCEPTED:
+			AtomicBoolean isLogin=Status.isLogin;
 			isLogin.set(true);
 			List<TopicAndQos> andQos=new LinkedList<>();
 			topics.drainTo(andQos);
 			andQos.forEach((t)->{
 				subTopic(t.topicName, t.mqttQoS);
 			});
+			logger.info("登录成功");
 			break;
 		default:
 			if (logger.isDebugEnabled()) {
@@ -147,6 +151,7 @@ public class ConnectionHandle extends ChannelInboundHandlerAdapter {
 	 */
 	public void subTopic(String topicName,MqttQoS mqttQoS) {
 		
+		AtomicBoolean isLogin=Status.isLogin;
 		if(!isLogin.get()) {
 			topics.offer(new TopicAndQos(topicName, mqttQoS));
 		}else {			
