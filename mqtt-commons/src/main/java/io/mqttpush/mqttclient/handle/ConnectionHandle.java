@@ -12,6 +12,7 @@ import io.mqttpush.mqttclient.conn.Connetor;
 import io.mqttpush.mqttclient.conn.Status;
 import io.mqttpush.mqttclient.service.ApiService;
 import io.mqttpush.mqttclient.service.DefaultApiService;
+import io.mqttpush.mqttserver.beans.SendableMsg;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;

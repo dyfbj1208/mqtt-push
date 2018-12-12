@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
 
+import io.mqttpush.mqttclient.conn.CancelbleExecutorService;
 import io.mqttpush.mqttclient.conn.Connetor;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -33,14 +34,14 @@ public class PingRunnable implements Runnable {
 
 	final Connetor connetor;
 
-	final ScheduledExecutorService executorService;
+	final CancelbleExecutorService executorService;
 	
 	final Integer pingTime;
 
 
 	public PingRunnable(Channel channel, Connetor connetor,
 			Integer pingTime,
-			ScheduledExecutorService executorService) {
+			CancelbleExecutorService executorService) {
 		super();
 		this.channel = channel;
 		this.connetor = connetor;

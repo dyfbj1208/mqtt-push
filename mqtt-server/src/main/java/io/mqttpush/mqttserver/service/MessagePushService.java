@@ -194,16 +194,7 @@ public class MessagePushService {
 			qosLevel = channel.attr(attributeKey).get();
 		}
 
-		MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH,sendableMsg.isDup(),
-				qosLevel, sendableMsg.isRetain(), 0);
-
-		MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(sendableMsg.getTopName(),
-				sendableMsg.getMessageId());
-
-		MqttPublishMessage mqttPublishMessage = new MqttPublishMessage(mqttFixedHeader, variableHeader, sendBuf);
-
-		
-		ChannelFuture channelFuture = channel.writeAndFlush(mqttPublishMessage);
+	
 
 		/**
 		 * 保证通道里面只有一个待发消息。 如果有其他待发消息就发给admin 处理
@@ -232,6 +223,19 @@ public class MessagePushService {
 			channel.attr(ConstantBean.UnConfirmedKey).set(sendableMsg);
 
 		}
+		
+		
+		
+		MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH,sendableMsg.isDup(),
+				qosLevel, sendableMsg.isRetain(), 0);
+
+		MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(sendableMsg.getTopName(),
+				sendableMsg.getMessageId());
+
+		MqttPublishMessage mqttPublishMessage = new MqttPublishMessage(mqttFixedHeader, variableHeader, sendBuf);
+
+		
+		ChannelFuture channelFuture = channel.writeAndFlush(mqttPublishMessage);
 
 		return channelFuture;
 

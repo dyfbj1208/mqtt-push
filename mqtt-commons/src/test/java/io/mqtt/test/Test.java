@@ -15,7 +15,7 @@ public class Test {
 		final DefaultApiService apiService=new DefaultApiService();
 		final DefaultMessageListener defaultMessageListener=new DefaultMessageListener();
 
-		ConnectProperties  properties=new ConnectProperties("localhost",8001,"admintest","user","user123456",5);
+		ConnectProperties  properties=new ConnectProperties("192.168.31.120",8008,"admintest","user","user123456",5);
 	
 		new Thread(){
 			

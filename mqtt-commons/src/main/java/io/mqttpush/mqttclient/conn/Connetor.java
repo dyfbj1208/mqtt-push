@@ -41,9 +41,7 @@ public class Connetor {
 	final ConnectionHandle connectionHandle;
 	ChannelFuture nowCloseFuture;
 	
-
-
-	ScheduledExecutorService executorService = Executors.newScheduledThreadPool(2);
+	CancelbleExecutorService executorService = new CancelbleExecutorService(2);
 
 
 	public Connetor(ConnectProperties properties, ApiService apiService, MessageListener defaultMessageListener) {
@@ -147,11 +145,12 @@ public class Connetor {
 	public ChannelFuture reconnection(Channel channel) {
 
 	
+		
 		AtomicBoolean hasConnect=Status.hasConnect;
 		/**
 		 * 清理调调度线程池
 		 */
-		
+		executorService.reset();
 		hasConnect.set(false);
 		
 		if (channel==null||!channel.isActive()) {
