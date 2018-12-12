@@ -83,6 +83,6 @@ public abstract  class AbstractHandle extends ChannelInboundHandlerAdapter imple
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
 
 		logger.debug("异常 " + ctx.channel(), cause);
-		disconnect(ctx);
+		ctx.fireExceptionCaught(cause);
 	}
 }

@@ -26,7 +26,10 @@ public class PingRunnable implements Runnable {
 
 	final Channel channel;
 
-	final AtomicBoolean isValidate;
+	/**
+	 * 发送ping之后是否回复pong
+	 */
+	final AtomicBoolean hasResp;
 
 	final Connetor connetor;
 
@@ -34,15 +37,16 @@ public class PingRunnable implements Runnable {
 	
 	final Integer pingTime;
 
-	public PingRunnable(Channel channel, AtomicBoolean isValidate, Connetor connetor,
+
+	public PingRunnable(Channel channel, Connetor connetor,
 			Integer pingTime,
 			ScheduledExecutorService executorService) {
 		super();
 		this.channel = channel;
-		this.isValidate = isValidate;
 		this.connetor = connetor;
 		this.pingTime=pingTime;
 		this.executorService = executorService;
+		this.hasResp = new AtomicBoolean(false);
 	}
 
 	@Override
@@ -51,9 +55,16 @@ public class PingRunnable implements Runnable {
 		/**
 		 * 只要链路不可用，或者没有收到心跳回复就重新连接
 		 */
-		if (!channel.isActive() || (!isValidate.get())) {
+		
+		
+		if(!channel.isActive()) {
+			logger.warn("链路不可用了");
+			return;
+		}
+		
+		if (!hasResp.get()) {
 			connetor.reconnection(channel);
-			logger.warn("链路不可用,重新连接");
+			logger.warn("规定时间内未收到PONG报文，将会重新连接");
 			return;
 		}
 
@@ -61,19 +72,36 @@ public class PingRunnable implements Runnable {
 				new MqttMessage(new MqttFixedHeader(MqttMessageType.PINGREQ, false, MqttQoS.AT_MOST_ONCE, false, 0)))
 				.addListener((ChannelFuture future) -> {
 
-					if (logger.isDebugEnabled()) {
-						logger.debug("发送心跳");
-					}
-
 					/**
 					 * 只要心跳发出去了就设置了 没收到心跳
 					 */
-					if (isValidate.compareAndSet(true, false)) {
+					if (updatehasResp(false)) {
 						executorService.schedule(PingRunnable.this, pingTime, TimeUnit.SECONDS);
+					}
+					
+					
+					if (logger.isDebugEnabled()) {
+						logger.debug("发送心跳");
 					}
 
 				});
 
 	}
 
+	
+	/**
+	 * 更新hasResp
+	 * @param updateVal
+	 * @return
+	 */
+	public  boolean updatehasResp(boolean updateVal) {
+		
+		if(!hasResp.compareAndSet(!updateVal, updateVal)) {
+			return  hasResp.get()==updateVal;
+		}
+		
+		return true;
+	}
+	
+	
 }

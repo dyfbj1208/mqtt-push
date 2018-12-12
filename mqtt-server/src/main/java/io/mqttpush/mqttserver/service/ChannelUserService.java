@@ -6,6 +6,8 @@ import io.mqttpush.mqttserver.util.ByteBufEncodingUtil;
 import io.mqttpush.mqttserver.util.thread.MyHashRunnable;
 import io.mqttpush.mqttserver.util.thread.SingleThreadPool;
 import io.netty.channel.Channel;
+import io.netty.handler.codec.mqtt.MqttQoS;
+
 import org.apache.log4j.Logger;
 
 import java.util.HashMap;
@@ -32,6 +34,9 @@ public class ChannelUserService {
 
 	};
 
+	
+	TopicService topicService;
+	
 	MessagePushService messagePushService;
 	
 	SingleThreadPool singleThreadPool;
@@ -153,9 +158,12 @@ public class ChannelUserService {
 
 		ByteBufEncodingUtil bufEncodingUtil = ByteBufEncodingUtil.getInatance();
 		if (isAdmin(deviceId)) {
+			
+			gettopicService().subscribe(channel, ConstantBean.adminRecivTopic, MqttQoS.AT_LEAST_ONCE);
 			if (logger.isDebugEnabled()) {
-				logger.debug("admin上线" + channel.remoteAddress());
+				logger.debug("admin上线,注册admin监听" + channel.remoteAddress());
 			}
+			
 		} else {
 			getmessagePushService().send2Admin(bufEncodingUtil.onlineBytebuf(channel.alloc(), deviceId));
 		}
@@ -241,7 +249,14 @@ public class ChannelUserService {
 		return singleThreadPool;
 	}
 
-	
+	TopicService gettopicService() {
+		
+		if(topicService==null) {
+			topicService=ServiceBeans.getInstance().getTopicService();
+		}
+		
+		return topicService;
+	}
 	
 
 }

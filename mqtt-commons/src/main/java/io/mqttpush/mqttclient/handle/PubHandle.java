@@ -1,9 +1,6 @@
 package io.mqttpush.mqttclient.handle;
 
 import io.mqttpush.mqttclient.service.MessageListener;
-import io.mqttpush.mqttserver.beans.ConstantBean;
-import io.mqttpush.mqttserver.beans.SendableMsg;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
@@ -14,7 +11,6 @@ import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
 import io.netty.handler.codec.mqtt.MqttQoS;
-import io.netty.util.Attribute;
 import io.netty.util.ReferenceCountUtil;
 
 /**

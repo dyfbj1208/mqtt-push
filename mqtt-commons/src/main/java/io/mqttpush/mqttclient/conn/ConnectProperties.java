@@ -11,12 +11,11 @@ public class ConnectProperties {
 	private String password="user123456";
 	private Integer pingtime=60;
 	
-	public ConnectProperties(String host, Integer port, String subTopic, String deviceId, String username,
+	public ConnectProperties(String host, Integer port, String deviceId, String username,
 			String password, Integer pingtime) {
 		super();
 		this.host = host;
 		this.port = port;
-		this.subTopic = subTopic;
 		this.deviceId = deviceId;
 		this.username = username;
 		this.password = password;

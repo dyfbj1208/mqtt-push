@@ -247,8 +247,20 @@ public class MessagePushService {
 		/**
 		 * 使用channelgroup 和 组播发送都可以发送给adminTopic
 		 */
-		SendableMsg sendableMsg = new SendableMsg(ConstantBean.adminRecivTopic, ConstantBean.SYSTEM_IDENTIFY, payload);
-		topicService.channelsForGroup(ConstantBean.adminRecivTopic, sendableMsg);
+		
+
+		
+
+		MqttFixedHeader mqttFixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH,false,
+				MqttQoS.AT_LEAST_ONCE,false, 0);
+
+		MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(ConstantBean.adminRecivTopic,
+				payload.hashCode());
+
+		MqttPublishMessage mqttPublishMessage = new MqttPublishMessage(mqttFixedHeader, variableHeader, payload);
+		
+		
+		topicService.channelsForGroup(ConstantBean.adminRecivTopic, mqttPublishMessage);
 
 	}
 

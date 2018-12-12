@@ -162,12 +162,32 @@ public class TopicService {
 		devSubTopics.get(topicName).forEach(action);
 	}
 
+	
+	/**
+	 * 直接群发bytebuf
+	 * @param topicName
+	 * @param byteBuf
+	 */
+	public void channelsForGroup(String topicName,Object object) {
+		
+		ChannelGroup channelGroup =null;
+		if (mapChannelGroup.containsKey(topicName)) {
+			 channelGroup=mapChannelGroup.get(topicName);
+		}
+		if(channelGroup!=null) {
+			 channelGroup.writeAndFlush(object);
+		}else {
+			logger.warn("发送失败,这个主题不存在任何channel"+topicName);
+		}
+		
+	}
 	/**
 	 * 组发
 	 * 
 	 * @param topicName
 	 * @param sendableMsg
 	 */
+	@Deprecated
 	public void channelsForGroup(String topicName, SendableMsg sendableMsg) {
 
 		MessagePushService messagePushService = this.messagePushService;

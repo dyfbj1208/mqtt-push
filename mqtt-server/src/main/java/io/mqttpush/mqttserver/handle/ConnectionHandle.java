@@ -176,6 +176,7 @@ public class ConnectionHandle extends AbstractHandle {
 			if (attribute != null && (sendableMsg = attribute.get()) != null) {
 				if (sendableMsg.getByteForContent() == null) {
 					if (logger.isDebugEnabled()) {
+						attribute.set(null);
 						logger.debug("重发消息已经丢失了->" + sendableMsg.getSendDeviceId() + ":" + sendableMsg.getTopName());
 					}
 					return;

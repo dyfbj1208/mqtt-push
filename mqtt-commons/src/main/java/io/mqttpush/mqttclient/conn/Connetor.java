@@ -1,6 +1,7 @@
 package io.mqttpush.mqttclient.conn;
 
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -36,9 +37,11 @@ public class Connetor {
 	final ConnectProperties properties;
 	final ApiService apiService;
 	final MessageListener defaultMessageListener;
+	
+	final ConnectionHandle connectionHandle;
 	ChannelFuture nowCloseFuture;
-
-	AtomicBoolean isValidate = new AtomicBoolean(true);
+	
+	AtomicBoolean hasConnect = new AtomicBoolean(false);
 
 	ScheduledExecutorService executorService = Executors.newScheduledThreadPool(2);
 
@@ -50,28 +53,36 @@ public class Connetor {
 		this.defaultMessageListener = defaultMessageListener;
 		bootstrap = new Bootstrap();
 		eventLoopGroup = new NioEventLoopGroup(1);
+		
+		final Integer pingtime = properties.getPingtime();
+		final String deviceId = properties.getDeviceId();
+		final String username = properties.getUsername();
+		final String password = properties.getPassword();
+		
+		connectionHandle=new ConnectionHandle(Connetor.this, apiService, deviceId, username, password); 
 
-		init();
+	
+		init(pingtime);
 	}
 
 	/**
 	 * 初始化
 	 */
-	public void init() {
+	public void init(Integer pingtime) {
 
-		final Integer pingtime = properties.getPingtime();
-		final String deviceId = properties.getDeviceId();
-		final String username = properties.getUsername();
-		final String password = properties.getPassword();
-		final String subTopic = properties.getSubTopic();
+		
 
 		bootstrap.group(eventLoopGroup).channel(NioSocketChannel.class).option(ChannelOption.TCP_NODELAY, true)
 				.handler(new ChannelInitializer<SocketChannel>() {
 					@Override
 					public void initChannel(SocketChannel ch) throws Exception {
+						
+						
+						
 						ChannelPipeline p = ch.pipeline();
+	
 						p.addLast(new ReadTimeoutHandler(pingtime * 2), MqttEncoder.INSTANCE, new MqttDecoder(),
-								new ConnectionHandle(Connetor.this,isValidate, apiService, deviceId, username, password, subTopic),
+								connectionHandle,
 								new PubHandle(defaultMessageListener), new SubHandle());
 					}
 				});
@@ -93,14 +104,18 @@ public class Connetor {
 		channelFuture.addListener((ChannelFuture future) -> {
 
 			if (future.isSuccess()) {
-
-				PingRunnable runnable = new PingRunnable(future.channel(),
-						isValidate, 
+				hasConnect.set(true);
+				
+				PingRunnable pingRunnable = new PingRunnable(future.channel(),
 						Connetor.this,
 						properties.getPingtime(),
 						executorService);
-				executorService.schedule(runnable, properties.getPingtime(), TimeUnit.SECONDS);
-				isValidate.set(true);
+				
+				pingRunnable.updatehasResp(true);
+				connectionHandle.setPingRunnable(pingRunnable);
+				executorService.schedule(pingRunnable, properties.getPingtime(), TimeUnit.SECONDS);
+				
+				
 				if (logger.isDebugEnabled()) {
 					logger.debug("连接成功" + host + ":" + port);
 				}
@@ -108,10 +123,14 @@ public class Connetor {
 				/**
 				 * 连接失败，重新连接
 				 */
+				if(hasConnect.get()) {
+					logger.info("已经连接,无需重复连接");
+					return;
+				}
 				executorService.schedule( ()->{
 					reconnection(future.channel());
 				},3, TimeUnit.SECONDS);
-				logger.warn("连接失败", future.cause());
+				logger.warn("连接失败"+future.cause());
 			}
 		});
 		
@@ -130,9 +149,8 @@ public class Connetor {
 		/**
 		 * 清理调调度线程池
 		 */
-		executorService.shutdownNow();
-		executorService = Executors.newScheduledThreadPool(2);
 		
+		hasConnect.set(false);
 		
 		if (channel==null||!channel.isActive()) {
 			return connection();
