@@ -14,3 +14,8 @@ setsid java -jar mqtt-getway-0.0.1-SNAPSHOT.jar  > getway.log
 启动推送服务
 setsid java -jar mqtt-server-0.0.1-SNAPSHOT.jar  > push.log
 
+docker运行
+
+docker pull registry.cn-shanghai.aliyuncs.com/tianzhenjiu/mtp:1.0
+
+docker run   -p 8007:8007 -p 8008:8008  -p 8887:8887 --name  mtp  -d  -t  registry.cn-shanghai.aliyuncs.com/tianzhenjiu/mtp:1.0
