@@ -9,7 +9,7 @@ import io.mqttpush.mqttserver.service.ChannelUserService;
 import io.mqttpush.mqttserver.service.MessagePushService;
 import io.mqttpush.mqttserver.util.ByteBufEncodingUtil;
 import io.mqttpush.mqttserver.util.thread.MyHashRunnable;
-import io.mqttpush.mqttserver.util.thread.SingleThreadPool;
+import io.mqttpush.mqttserver.util.thread.SingelThreadPool;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -38,7 +38,7 @@ public class PushServiceHandle extends AbstractHandle {
 
 	MessagePushService messagePushService;
 	
-	SingleThreadPool singleThreadPool;
+	SingelThreadPool singleThreadPool;
 
 	public PushServiceHandle() {
 
@@ -161,7 +161,7 @@ public class PushServiceHandle extends AbstractHandle {
 					messagePushService.sendMsgForChannel(sendableMsg, toChannel, mqttQoS);
 					// 点对点发送的时候会记录最后发送对端的设备id
 					channel.attr(ConstantBean.LASTSENT_DEVICEID).set(deviceId);
-				} else {
+				} else if(sendableMsg.isRetain()){
 
 					/**
 					 * 如果不在线直接保存信息
@@ -176,7 +176,7 @@ public class PushServiceHandle extends AbstractHandle {
 
 			};
 			
-			singleThreadPool.execute(new MyHashRunnable(deviceId, sendRun, 0));
+			singleThreadPool.execute(new MyHashRunnable(PushServiceHandle.class,deviceId, sendRun, 0));
 
 		}
 

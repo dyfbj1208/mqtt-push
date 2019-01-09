@@ -1,17 +1,17 @@
 package io.mqttpush.mqttserver.service;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+
 import io.mqttpush.mqttserver.beans.ConstantBean;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
 import io.mqttpush.mqttserver.util.ByteBufEncodingUtil;
 import io.mqttpush.mqttserver.util.thread.MyHashRunnable;
-import io.mqttpush.mqttserver.util.thread.SingleThreadPool;
+import io.mqttpush.mqttserver.util.thread.SingelThreadPool;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.MqttQoS;
-
-import org.apache.log4j.Logger;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * 管理者登录信息的设备号以及channel
@@ -39,7 +39,7 @@ public class ChannelUserService {
 	
 	MessagePushService messagePushService;
 	
-	SingleThreadPool singleThreadPool;
+	SingelThreadPool singleThreadPool;
 
 	/**
 	 * 退出
@@ -69,7 +69,7 @@ public class ChannelUserService {
 			}
 		};
 		
-		getSignelThreadPoll().execute(new MyHashRunnable(deviceId, runnable, 0));
+		getSignelThreadPoll().execute(new MyHashRunnable(getClass(),deviceId, runnable, 0));
 		
 
 		
@@ -241,7 +241,7 @@ public class ChannelUserService {
 		return messagePushService;
 	}
 
-	public SingleThreadPool getSignelThreadPoll() {
+	public SingelThreadPool getSignelThreadPoll() {
 		
 		if(singleThreadPool==null) {
 			singleThreadPool=ServiceBeans.getInstance().getSingleThreadPool();

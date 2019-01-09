@@ -1,5 +1,9 @@
 package io.mqttpush.mqttserver.service;
 
+import java.util.function.BiConsumer;
+
+import org.apache.log4j.Logger;
+
 import io.mqttpush.mqttserver.beans.ConstantBean;
 import io.mqttpush.mqttserver.beans.SendableMsg;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
@@ -9,18 +13,19 @@ import io.mqttpush.mqttserver.util.AdminMessage.MessageType;
 import io.mqttpush.mqttserver.util.ByteBufEncodingUtil;
 import io.mqttpush.mqttserver.util.StashMessage;
 import io.mqttpush.mqttserver.util.thread.MyHashRunnable;
-import io.mqttpush.mqttserver.util.thread.SingleThreadPool;
+import io.mqttpush.mqttserver.util.thread.SingelThreadPool;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.handler.codec.mqtt.*;
+import io.netty.handler.codec.mqtt.MqttFixedHeader;
+import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
+import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
-import org.apache.log4j.Logger;
-
-import java.util.function.BiConsumer;
 
 /**
  * message 实际发送服务
@@ -36,7 +41,7 @@ public class MessagePushService {
 
 	TopicService topicService;
 
-	SingleThreadPool singleThreadPool;
+	SingelThreadPool singleThreadPool;
 	
 	ChannelUserService channelUserService;
 
@@ -55,13 +60,7 @@ public class MessagePushService {
 	 * @param sendableMsg
 	 */
 	public void sendMsg(final SendableMsg sendableMsg) {
-
-		
-
 		BiConsumer<String, MqttQoS> consumer = (deviceId, mqttQos) -> {
-
-			
-		
 			Runnable sendrunnable=()->{
 				
 				Channel channel = channelUserService.channel(deviceId);
@@ -87,9 +86,7 @@ public class MessagePushService {
 							sendableMsg.getByteForContent()), SendError.CHANNEL_OFF);
 				}
 			};
-			
-	
-			singleThreadPool.execute(new MyHashRunnable(deviceId, sendrunnable, 0));
+			singleThreadPool.execute(new MyHashRunnable(getClass(),deviceId, sendrunnable, 0));
 			
 		};
 

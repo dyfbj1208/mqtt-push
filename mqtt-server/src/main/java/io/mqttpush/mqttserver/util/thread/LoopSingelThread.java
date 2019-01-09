@@ -1,82 +1,95 @@
 package io.mqttpush.mqttserver.util.thread;
 
-import org.apache.log4j.Logger;
-
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-
-
-
+import org.apache.log4j.Logger;
+import org.apache.log4j.spi.LoggerFactory;
 
 
 
 /**
  * 
- * @author tianzhenjiu
- * 
- * 这是一个单线程的双向链表
- * 方便在判断这个线程不能处理runnable的时候 丢给下一个线程
- * 
- *  
+ * @author acer
  *
  */
-public  class LoopSingleThread extends ThreadPoolExecutor {
+public class LoopSingelThread extends ThreadPoolExecutor {
 
-	LoopSingleThread next;
+	LoopSingelThread next;
 
-	LoopSingleThread prev;
-
+	LoopSingelThread prev;
 	
-	public static Logger logger=Logger.getLogger(LoopSingleThread.class);
+	long firstTaskAddTime;
+	
+
+	public static Logger logger = Logger.getLogger(LoopSingelThread.class);
 
 	int index;
 
 	int totalThreadCount;
+	
 
-	public LoopSingleThread(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit) {
-		super(1, 1, 0, TimeUnit.MICROSECONDS, new LinkedBlockingQueue<>(10240),new MyThreadFactory());
-
+	protected LoopSingelThread(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit) {
+		super(1, 1, 0, TimeUnit.MICROSECONDS,
+				new LinkedBlockingQueue<>(10240),
+				new MyThreadFactory(),
+				new MyRejectedExecutionHandler()
+				);
 	}
 
 	@Override
 	public void execute(Runnable command) {
 
+		
 		if (command instanceof MyHashRunnable) {
-
+			
 			MyHashRunnable me = (MyHashRunnable) command;
 			if (canExe(me)) {
-				logger.info(super.hashCode()+"直接处理"+index+"->"+me.identify);
+				logger.info("直接处理" + index + "->" + me.identify);
 				super.execute(command);
-			} else if(next!=null){
+			
+			} else if (next != null) {
 				next.execute(command);
-			}else {
-				logger.info("寻找匹配线程失败"+me.identify);
+			} else {
 				super.execute(command);
 			}
 
 		} else {
-			logger.info("非HashRun直接处理");
 			super.execute(command);
+		}
+	}
+
+	@Override
+	public Future<?> submit(Runnable command) {
+			
+		if (command instanceof MyHashRunnable) {
+
+			MyHashRunnable me = (MyHashRunnable) command;
+			if (canExe(me)) {
+				logger.info(me.sourceClass+":直接处理" + index + "->" + me.identify);
+				return super.submit(command);
+			} else if (next != null) {
+				return next.submit(command);
+			} else {
+				return super.submit(command);
+			}
+
+		} else {
+			return super.submit(command);
 		}
 	}
 
 	public boolean canExe(MyHashRunnable hashRunnable) {
 
 		String identify = hashRunnable.identify;
-		int hash=Math.abs( identify.hashCode());
+		int hash = Math.abs(identify.hashCode());
 		return hash % totalThreadCount == index;
 	}
-	
-	
-	/**
-	 * 自己的线程工厂，方便设置线程的属性
-	 * @author acer
-	 *
-	 */
+
 	public static class MyThreadFactory implements ThreadFactory {
 
 		private static final AtomicInteger poolNumber = new AtomicInteger(1);
@@ -87,12 +100,12 @@ public  class LoopSingleThread extends ThreadPoolExecutor {
 		MyThreadFactory() {
 			SecurityManager s = System.getSecurityManager();
 			group = (s != null) ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
-			namePrefix = "service-" + poolNumber.getAndIncrement() + "-thread-";
+			namePrefix = "service-" + poolNumber.getAndIncrement() + "-mythread-";
 		}
 
 		public Thread newThread(Runnable r) {
 			int num = threadNumber.getAndIncrement();
-			Thread t = new Thread( group, r, namePrefix + num, 0);
+			Thread t = new Thread(group, r, namePrefix + num, 0);
 			if (t.isDaemon())
 				t.setDaemon(false);
 			if (t.getPriority() != Thread.NORM_PRIORITY)
@@ -120,19 +133,19 @@ public  class LoopSingleThread extends ThreadPoolExecutor {
 		this.index = index;
 	}
 
-	public LoopSingleThread getNext() {
+	public LoopSingelThread getNext() {
 		return next;
 	}
 
-	public void setNext(LoopSingleThread next) {
+	public void setNext(LoopSingelThread next) {
 		this.next = next;
 	}
 
-	public LoopSingleThread getPrev() {
+	public LoopSingelThread getPrev() {
 		return prev;
 	}
 
-	public void setPrev(LoopSingleThread prev) {
+	public void setPrev(LoopSingelThread prev) {
 		this.prev = prev;
 	}
 

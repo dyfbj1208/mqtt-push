@@ -4,20 +4,20 @@ import java.lang.Thread.UncaughtExceptionHandler;
 
 import org.apache.log4j.Logger;
 
-
 /**
  * 
- * @author tzj
+ * @author tianzhenjiu
  *
  */
 public class MyUncaughtExceptionHandler  implements UncaughtExceptionHandler{
 
-	public static Logger logger=Logger.getLogger(MyUncaughtExceptionHandler.class);
+	Logger logger=Logger.getLogger(getClass());
+	
 	
 	@Override
 	public void uncaughtException(Thread t, Throwable e) {
 		
-		logger.warn(t.getName()+"异常,将会结束掉!!!",e);
+		logger.warn("发送了异常,非常严重",e);
 	}
 
 }

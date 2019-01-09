@@ -1,5 +1,7 @@
 package io.mqttpush.mqttserver.handle;
 
+import org.apache.log4j.Logger;
+
 import io.mqttpush.mqttserver.beans.ConstantBean;
 import io.mqttpush.mqttserver.beans.SendableMsg;
 import io.mqttpush.mqttserver.beans.ServiceBeans;
@@ -7,13 +9,20 @@ import io.mqttpush.mqttserver.service.ChannelUserService;
 import io.mqttpush.mqttserver.service.CheckUserService;
 import io.mqttpush.mqttserver.service.MessagePushService;
 import io.mqttpush.mqttserver.util.thread.MyHashRunnable;
-import io.mqttpush.mqttserver.util.thread.SingleThreadPool;
+import io.mqttpush.mqttserver.util.thread.SingelThreadPool;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.mqtt.*;
+import io.netty.handler.codec.mqtt.MqttConnAckMessage;
+import io.netty.handler.codec.mqtt.MqttConnAckVariableHeader;
+import io.netty.handler.codec.mqtt.MqttConnectMessage;
+import io.netty.handler.codec.mqtt.MqttConnectPayload;
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttFixedHeader;
+import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.Attribute;
-import org.apache.log4j.Logger;
 
 /**
  * 处理登录 心跳，断开的handle
@@ -44,7 +53,7 @@ public class ConnectionHandle extends AbstractHandle {
 	/**
 	 * 根据hash标志亲缘线程池
 	 */
-	SingleThreadPool signelThreadPoll;
+	SingelThreadPool signelThreadPoll;
 
 	public ConnectionHandle() {
 		super();
@@ -109,7 +118,7 @@ public class ConnectionHandle extends AbstractHandle {
 			ackDevice(deviceId, channel, connectPayload.userName(), connectPayload.password());
 		};
 
-		signelThreadPoll.execute(new MyHashRunnable(deviceId, runnable, 0));
+		signelThreadPoll.execute(new MyHashRunnable(getClass(),deviceId, runnable, 0));
 
 		logger.info("设备接入" + deviceId);
 	}
